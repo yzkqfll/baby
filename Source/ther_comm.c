@@ -29,10 +29,10 @@
 
 #define MODULE "[THER COMM] "
 
-#define THER_INDICATE_FLAG (THERMOMETER_FLAGS_CELCIUS | THERMOMETER_FLAGS_TYPE)
-#define THER_NOTIFY_FLAG (THERMOMETER_FLAGS_CELCIUS | THERMOMETER_FLAGS_TYPE)
+#define THER_INDICATE_FLAG (THERMOMETER_FLAGS_CELCIUS | THERMOMETER_FLAGS_TIMESTAMP | THERMOMETER_FLAGS_TYPE)
+#define THER_NOTIFY_FLAG (THERMOMETER_FLAGS_CELCIUS | THERMOMETER_FLAGS_TIMESTAMP | THERMOMETER_FLAGS_TYPE)
 
-static unsigned char encap_temp_data(unsigned char flag, unsigned int temp, unsigned char *buf)
+static unsigned char encap_temp_data(unsigned char flag, unsigned long temp, unsigned char *buf)
 {
 	unsigned char *start_start = buf;
 
@@ -40,7 +40,7 @@ static unsigned char encap_temp_data(unsigned char flag, unsigned int temp, unsi
 	*buf++ = flag;
 
 	if (flag & THERMOMETER_FLAGS_FARENHEIT)
-		temp  = (temp * 9  /5) + 320;
+		temp  = (temp * 9 / 5) + 320;
 
 	temp = 0xFF000000 | temp;
 
@@ -81,7 +81,7 @@ static unsigned char encap_temp_data(unsigned char flag, unsigned int temp, unsi
 void ther_send_temp_notify(uint16 connect_handle)
 {
 	attHandleValueNoti_t notify;
-	unsigned int temp = get_current_temp();
+	unsigned long temp = get_current_temp();
 
 	notify.len = encap_temp_data(THER_NOTIFY_FLAG, temp, notify.value);
 //	notify.handle = THERMOMETER_IMEAS_VALUE_POS;
@@ -96,7 +96,7 @@ void ther_send_temp_notify(uint16 connect_handle)
 void ther_send_temp_indicate(uint16 connect_handle, unsigned char task_id)
 {
 	attHandleValueInd_t indicate;
-	unsigned int temp = get_current_temp();
+	unsigned long temp = get_current_temp();
 
 	indicate.len = encap_temp_data(THER_INDICATE_FLAG, temp, indicate.value);
 	indicate.handle = THERMOMETER_TEMP_VALUE_POS;
@@ -108,7 +108,7 @@ void ther_send_temp_indicate(uint16 connect_handle, unsigned char task_id)
 	return;
 }
 
-void ther_handle_gatt_msg(struct ther_info *ti, gattMsgEvent_t *msg)
+void ther_handle_gatt_msg(gattMsgEvent_t *msg)
 {
 	/*
 	 * Indication Confirmation

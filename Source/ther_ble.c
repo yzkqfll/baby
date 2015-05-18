@@ -85,7 +85,7 @@ static uint8 scanResponseData[] =
 {
   0x12,   // length of this data
   GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-  '5',
+  't',
   'h',
   'e',
   'r',

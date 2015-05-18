@@ -81,8 +81,8 @@ static void ther_handle_gatt_access_msg(struct ther_info *ti, struct ble_msg *ms
 		print(LOG_INFO, MODULE "start temp indication\r\n");
 
 		ti->temp_indication_enable = TRUE;
-		ti->indication_interval = 20;
-		osal_start_timerEx(ti->task_id, TH_PERIODIC_MEAS_EVT, INTERVAL_MS(ti->indication_interval));
+		ti->indication_interval = 5;
+		osal_start_timerEx(ti->task_id, TH_PERIODIC_MEAS_EVT, INTERVAL_MS(1));
 
 		break;
 
@@ -97,8 +97,8 @@ static void ther_handle_gatt_access_msg(struct ther_info *ti, struct ble_msg *ms
 		print(LOG_INFO, MODULE "start imeas notification\r\n");
 
 		ti->temp_notification_enable = TRUE;
-		ti->notification_interval = 10;
-		osal_start_timerEx(ti->task_id, TH_PERIODIC_IMEAS_EVT, INTERVAL_MS(ti->notification_interval));
+		ti->notification_interval = 5;
+		osal_start_timerEx(ti->task_id, TH_PERIODIC_IMEAS_EVT, INTERVAL_MS(3));
 
 		break;
 
@@ -128,15 +128,19 @@ static void ther_handle_gatt_access_msg(struct ther_info *ti, struct ble_msg *ms
 
 static void ther_dispatch_msg(struct ther_info *ti, osal_event_hdr_t *msg)
 {
-	print(LOG_DBG, "event %d, staus %d\r\n", msg->event, msg->status);
+	keyChange_t *kmsg;
+
+/*	print(LOG_DBG, MODULE "dispatch event %d(0x%02x), staus %d\r\n",
+			msg->event, msg->event, msg->status);*/
+
 	switch (msg->event) {
 	case KEY_CHANGE:
-		keyChange_t *kmsg = (keyChange_t *)msg;
+		kmsg = (keyChange_t *)msg;
 		ther_handle_button(kmsg->state, kmsg->keys);
 		break;
 
 	case GATT_MSG_EVENT:
-		ther_handle_gatt_msg(ti, (gattMsgEvent_t *)msg);
+		ther_handle_gatt_msg((gattMsgEvent_t *)msg);
 		break;
 
 	case BLE_GATT_ACCESS_EVENT:
