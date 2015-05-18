@@ -1,5 +1,4 @@
 
-
 #include "bcomdef.h"
 #include "OSAL.h"
 #include "OSAL_PwrMgr.h"
@@ -26,6 +25,7 @@
 #include "uart_comm.h"
 
 #include "ther_ble.h"
+
 #include "ther_comm.h"
 
 #include "ther_button.h"
@@ -34,26 +34,117 @@
 
 struct ther_info {
 	uint8 task_id;
+
+	/*
+	 * Indication
+	 */
+	bool temp_indication_enable;
+	unsigned char indication_interval; /* second */
+
+	/*
+	 * Notification
+	 */
+	bool temp_notification_enable;
+	unsigned char notification_interval; /* second */
 };
 
 static struct ther_info ther_info;
 
+#define INTERVAL_MS(sec) ((sec) * 1000)
 
+static void ther_temp_periodic_meas(struct ther_info *ti)
+{
+	/* need wait for response?? */
+	ther_send_temp_indicate(ble_get_gap_handle(), ti->task_id);
 
-static void ther_handle_msg(osal_event_hdr_t *msg)
+	if (ti->temp_indication_enable)
+		osal_start_timerEx( ti->task_id, TH_PERIODIC_MEAS_EVT, INTERVAL_MS(ti->indication_interval));
+
+	return;
+}
+
+static void ther_temp_periodic_imeas(struct ther_info *ti)
+{
+	ther_send_temp_notify(ble_get_gap_handle());
+
+	if (ti->temp_notification_enable)
+		osal_start_timerEx( ti->task_id, TH_PERIODIC_IMEAS_EVT, INTERVAL_MS(ti->notification_interval));
+
+	return;
+}
+
+static void ther_handle_gatt_access_msg(struct ther_info *ti, struct ble_msg *msg)
+{
+	switch (msg->type) {
+
+	case GATT_TEMP_IND_ENABLED:
+		print(LOG_INFO, MODULE "start temp indication\r\n");
+
+		ti->temp_indication_enable = TRUE;
+		ti->indication_interval = 20;
+		osal_start_timerEx(ti->task_id, TH_PERIODIC_MEAS_EVT, INTERVAL_MS(ti->indication_interval));
+
+		break;
+
+	case GATT_TEMP_IND_DISABLED:
+		print(LOG_INFO, MODULE "stop temp indication\r\n");
+
+		ti->temp_indication_enable = FALSE;
+
+		break;
+
+	case GATT_IMEAS_NOTI_ENABLED:
+		print(LOG_INFO, MODULE "start imeas notification\r\n");
+
+		ti->temp_notification_enable = TRUE;
+		ti->notification_interval = 10;
+		osal_start_timerEx(ti->task_id, TH_PERIODIC_IMEAS_EVT, INTERVAL_MS(ti->notification_interval));
+
+		break;
+
+	case GATT_IMEAS_NOTI_DISABLED:
+		print(LOG_INFO, MODULE "stop imeas notification\r\n");
+		ti->temp_notification_enable = FALSE;
+
+		break;
+
+	case GATT_INTERVAL_IND_ENABLED:
+		print(LOG_INFO, MODULE "start interval indication\r\n");
+
+		break;
+
+	case GATT_INTERVAL_IND_DISABLED:
+		print(LOG_INFO, MODULE "stop interval indication\r\n");
+
+		break;
+
+	case GATT_UNKNOWN:
+		print(LOG_INFO, MODULE "unknown gatt access type\r\n");
+		break;
+	}
+
+	return;
+}
+
+static void ther_dispatch_msg(struct ther_info *ti, osal_event_hdr_t *msg)
 {
 	print(LOG_DBG, "event %d, staus %d\r\n", msg->event, msg->status);
 	switch (msg->event) {
-		case KEY_CHANGE:
-			ther_handle_button( ((keyChange_t *)msg)->state, ((keyChange_t *)msg)->keys );
-			break;
+	case KEY_CHANGE:
+		keyChange_t *kmsg = (keyChange_t *)msg;
+		ther_handle_button(kmsg->state, kmsg->keys);
+		break;
 
-		case GATT_MSG_EVENT:
-			ther_handle_gatt_msg( (gattMsgEvent_t *) msg );
-			break;
+	case GATT_MSG_EVENT:
+		ther_handle_gatt_msg(ti, (gattMsgEvent_t *)msg);
+		break;
 
-		default:
-			break;
+	case BLE_GATT_ACCESS_EVENT:
+		ther_handle_gatt_access_msg(ti, (struct ble_msg *)msg);
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -78,7 +169,7 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 		uint8 *msg;
 
 		if ( (msg = osal_msg_receive(ti->task_id)) != NULL ) {
-			ther_handle_msg( (osal_event_hdr_t *)msg );
+			ther_dispatch_msg(ti, (osal_event_hdr_t *)msg);
 
 			osal_msg_deallocate( msg );
 		}
@@ -86,17 +177,14 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 		return (events ^ SYS_EVENT_MSG);
 	}
 
-	if(events & TH_CCC_UPDATE_EVT) {
-		ther_send_temp_indicate(ble_get_gap_handle(), ti->task_id);
+	if(events & TH_PERIODIC_MEAS_EVT) {
+		ther_temp_periodic_meas(ti);
 
-		osal_start_timerEx( ti->task_id, TH_CCC_UPDATE_EVT, 3000 );
-
-		return (events ^ TH_CCC_UPDATE_EVT);
+		return (events ^ TH_PERIODIC_MEAS_EVT);
 	}
 
 	if (events & TH_PERIODIC_IMEAS_EVT) {
-//		ther_send_temp_notify(ble_get_gap_handle());
-		osal_start_timerEx(ti->task_id, TH_PERIODIC_IMEAS_EVT, 3000);
+		ther_temp_periodic_imeas(ti);
 
 		return (events ^ TH_PERIODIC_IMEAS_EVT);
 	}
@@ -129,6 +217,10 @@ void Thermometer_Init(uint8 task_id)
 	/* uart init */
 	uart_comm_init();
 
+	/* iic init */
+
+	/* oled init */
+
 	/* gpio init */
 
 	/* adc init */
@@ -138,5 +230,5 @@ void Thermometer_Init(uint8 task_id)
 	ther_ble_init(ti->task_id);
 
 	// Register for all key events - This app will handle all key events
-	RegisterForKeys( ti->task_id );
+	RegisterForKeys(ti->task_id);
 }

@@ -29,25 +29,14 @@
 
 #define MODULE "[THER COMM] "
 
-// flags for simulated measurements
-static const uint8 ther_flags[] =
-{
-  THERMOMETER_FLAGS_CELCIUS | THERMOMETER_FLAGS_TIMESTAMP |THERMOMETER_FLAGS_TYPE,
-  THERMOMETER_FLAGS_CELCIUS | THERMOMETER_FLAGS_TIMESTAMP,
-  THERMOMETER_FLAGS_CELCIUS,
-  THERMOMETER_FLAGS_FARENHEIT,
-  THERMOMETER_FLAGS_FARENHEIT | THERMOMETER_FLAGS_TIMESTAMP,
-  THERMOMETER_FLAGS_FARENHEIT | THERMOMETER_FLAGS_TIMESTAMP | THERMOMETER_FLAGS_TYPE,
-  0x00
-};
-
+#define THER_INDICATE_FLAG (THERMOMETER_FLAGS_CELCIUS | THERMOMETER_FLAGS_TYPE)
 #define THER_NOTIFY_FLAG (THERMOMETER_FLAGS_CELCIUS | THERMOMETER_FLAGS_TYPE)
 
-static unsigned char encap_temp_buf(unsigned char flag, unsigned int temp, unsigned char *buf)
+static unsigned char encap_temp_data(unsigned char flag, unsigned int temp, unsigned char *buf)
 {
 	unsigned char *start_start = buf;
 
-	/* flag */
+	/* a). flag */
 	*buf++ = flag;
 
 	if (flag & THERMOMETER_FLAGS_FARENHEIT)
@@ -55,11 +44,11 @@ static unsigned char encap_temp_buf(unsigned char flag, unsigned int temp, unsig
 
 	temp = 0xFF000000 | temp;
 
-	/* temp */
+	/* b). temp */
 	osal_buffer_uint32(buf, temp);
 	buf += 4;
 
-    //timestamp
+    /* c). timestamp */
     if (flag & THERMOMETER_FLAGS_TIMESTAMP) {
       UTCTimeStruct time;
 
@@ -78,6 +67,7 @@ static unsigned char encap_temp_buf(unsigned char flag, unsigned int temp, unsig
       *buf++ = time.seconds;
     }
 
+    /* d). type */
 	if(flag & THERMOMETER_FLAGS_TYPE)
 	{
 		uint8 type;
@@ -93,10 +83,10 @@ void ther_send_temp_notify(uint16 connect_handle)
 	attHandleValueNoti_t notify;
 	unsigned int temp = get_current_temp();
 
-	notify.len = encap_temp_buf(THER_NOTIFY_FLAG, temp, notify.value);
+	notify.len = encap_temp_data(THER_NOTIFY_FLAG, temp, notify.value);
 //	notify.handle = THERMOMETER_IMEAS_VALUE_POS;
 
-	print(LOG_DBG, MODULE "send notify(temp %d)\r\n", temp);
+	print(LOG_DBG, MODULE "send notification(temp %d)\r\n", temp);
 
 	Thermometer_IMeasNotify( connect_handle, &notify);
 
@@ -108,31 +98,33 @@ void ther_send_temp_indicate(uint16 connect_handle, unsigned char task_id)
 	attHandleValueInd_t indicate;
 	unsigned int temp = get_current_temp();
 
-	indicate.len = encap_temp_buf(THER_NOTIFY_FLAG, temp, indicate.value);
+	indicate.len = encap_temp_data(THER_INDICATE_FLAG, temp, indicate.value);
 	indicate.handle = THERMOMETER_TEMP_VALUE_POS;
 
-	print(LOG_DBG, MODULE "send indicate(temp %d)\r\n", temp);
+	print(LOG_DBG, MODULE "send indication(temp %d)\r\n", temp);
 
 	Thermometer_TempIndicate( connect_handle, &indicate, task_id);
 
 	return;
 }
 
-void ther_handle_gatt_msg(gattMsgEvent_t *pMsg)
+void ther_handle_gatt_msg(struct ther_info *ti, gattMsgEvent_t *msg)
 {
-	//Measurement Indication Confirmation
-	if( pMsg->method ==ATT_HANDLE_VALUE_CFM)
+	/*
+	 * Indication Confirmation
+	 */
+	if(msg->method == ATT_HANDLE_VALUE_CFM)
 	{
 //		thermometerSendStoredMeas();
 	}
 
-	if ( pMsg->method == ATT_HANDLE_VALUE_NOTI ||
-			pMsg->method == ATT_HANDLE_VALUE_IND )
+	if (msg->method == ATT_HANDLE_VALUE_NOTI ||
+			msg->method == ATT_HANDLE_VALUE_IND )
 	{
-		timeAppIndGattMsg( pMsg );
+		timeAppIndGattMsg( msg );
 	}
-	else if ( pMsg->method == ATT_READ_RSP ||
-			pMsg->method == ATT_WRITE_RSP )
+	else if ( msg->method == ATT_READ_RSP ||
+			msg->method == ATT_WRITE_RSP )
 	{
 	}
 	else

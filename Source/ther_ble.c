@@ -31,8 +31,7 @@ struct ther_ble_info {
 	uint8 task_id;
 
 	uint16 gap_handle;
-
-	gaprole_States_t gap_state;
+	gaprole_States_t gap_role_state;
 
 	uint8 last_connected_addr[B_ADDR_LEN];
 	bool connect_to_last_addr;
@@ -40,6 +39,10 @@ struct ther_ble_info {
 
 static struct ther_ble_info ble_info;
 
+/*
+ * If it consumes a lot of memory,
+ * directly use string instead of static variable
+ */
 static const char *gap_state_str[] = {
 	"init",
 	"started",
@@ -49,19 +52,6 @@ static const char *gap_state_str[] = {
 	"connected",
 	"connected_adv",
 	"error"
-};
-
-static const char *ther_profile_event_str[] = {
-	"",
-	"temp meas indicate enabled",
-	"temp meas indicate disabled",
-	"intermediate temp meas notify enabled",
-	"intermediate temp meas notify disabled",
-	"meas interval indicate enabled",
-	"meas interval indicate disabled",
-	"interval set",
-	"test cmd C",
-	"test cmd F",
 };
 
 // Use limited discoverable mode to advertise for 30.72s, and then stop, or
@@ -166,12 +156,12 @@ void ble_start_advertise(void)
 /*
  * Will be invoked when GAP state changed
  */
-static void gap_role_state_change(gaprole_States_t new_state)
+static void ble_gap_role_new_state(gaprole_States_t new_state)
 {
 	struct ther_ble_info *bi = &ble_info;
 	linkDBItem_t  *item;
 
-	print(LOG_INFO, MODULE "GAP: state change to <%s>\r\n", gap_state_str[new_state]);
+	print(LOG_INFO, MODULE "GAP: change to <%s>\r\n", gap_state_str[new_state]);
 
 	switch (new_state) {
 		case GAPROLE_CONNECTED:
@@ -206,60 +196,72 @@ static void gap_role_state_change(gaprole_States_t new_state)
 
 	}
 
-	bi->gap_state = new_state;
+	bi->gap_role_state = new_state;
 
 	return;
 }
 
 /*
- * When ther profile is read/written, this callback will be invoked
+ * When ther profile is written, this callback will be invoked
  *
  * We will report this event to ther app by osal_set_event()
  */
-static void ther_profile_accessed(uint8 event)
+static void ble_gatt_accessed(uint8 event)
 {
 	struct ther_ble_info *bi = &ble_info;
+	struct ble_msg *msg;
 
-	print(LOG_INFO, MODULE "get ther profile event <%s>\r\n", ther_profile_event_str[event]);
+	msg = (struct ble_msg *)osal_msg_allocate(sizeof(struct ble_msg));
+	if (!msg) {
+		print(LOG_INFO, MODULE "fail to allocate <struct ble_msg>\r\n");
+		return;
+	}
+
+	msg->hdr.event = BLE_GATT_ACCESS_EVENT;
 
 	switch (event) {
 		case THERMOMETER_TEMP_IND_ENABLED:
-			osal_start_timerEx( bi->task_id, TH_CCC_UPDATE_EVT, 1000);
+			msg->type = GATT_TEMP_IND_ENABLED;
 			break;
 
 		case  THERMOMETER_TEMP_IND_DISABLED:
-			osal_stop_timerEx( bi->task_id, TH_PERIODIC_MEAS_EVT );
+			msg->type = GATT_TEMP_IND_DISABLED;
 			break;
 
 		case THERMOMETER_IMEAS_NOTI_ENABLED:
-			osal_start_timerEx( bi->task_id, TH_PERIODIC_IMEAS_EVT, 1000 );
+			msg->type = GATT_IMEAS_NOTI_ENABLED;
 			break;
 
 		case  THERMOMETER_IMEAS_NOTI_DISABLED:
-			osal_stop_timerEx( bi->task_id, TH_PERIODIC_IMEAS_EVT );
+			msg->type = GATT_IMEAS_NOTI_DISABLED;
 			break;
 
 		case THERMOMETER_INTERVAL_IND_ENABLED:
+			msg->type = GATT_INTERVAL_IND_ENABLED;
 			break;
 
 		case THERMOMETER_INTERVAL_IND_DISABLED:
+			msg->type = GATT_INTERVAL_IND_DISABLED;
 			break;
 
 		default:
+			msg->type = GATT_UNKNOWN;
 			break;
-	  }
+	}
+
+	osal_msg_send(bi->task_id, (uint8 *)msg);
 
 	return;
 }
 
-/*********************************************************************
- * @fn      timeAppPasscodeCB
- *
- * @brief   Passcode callback.
- *
- * @return  none
- */
-static void gap_passcode( uint8 *deviceAddr, uint16 connectionHandle,
+// GAP Role Callbacks
+static gapRolesCBs_t ther_gap_hooks =
+{
+  ble_gap_role_new_state,	// Profile State Change Callbacks
+  NULL              		// When a valid RSSI is read from controller
+};
+
+static void ble_gap_passcode( uint8 *deviceAddr, uint16 connectionHandle,
                                         uint8 uiInputs, uint8 uiOutputs )
 {
   // Send passcode response
@@ -267,29 +269,15 @@ static void gap_passcode( uint8 *deviceAddr, uint16 connectionHandle,
 }
 
 
-/*********************************************************************
- * @fn      pairStateCB
- *
- * @brief   Pairing state callback.
- *
- * @return  none
- */
-static void gap_paring_state_change( uint16 connHandle, uint8 state, uint8 status )
+static void ble_gap_paring( uint16 connHandle, uint8 state, uint8 status )
 {
 }
-
-// GAP Role Callbacks
-static gapRolesCBs_t ther_gap_hooks =
-{
-  gap_role_state_change,	// Profile State Change Callbacks
-  NULL              		// When a valid RSSI is read from controller
-};
 
 // GAP Bond Manager Callbacks
 static gapBondCBs_t ther_gap_bond_hooks =
 {
-  gap_passcode,
-  gap_paring_state_change,
+  ble_gap_passcode,
+  ble_gap_paring,
 };
 
 static void ble_start(void)
@@ -401,7 +389,7 @@ unsigned char ther_ble_init(uint8 task_id)
 	DevInfo_AddService( );
 
 	// Register for Thermometer service callback
-	Thermometer_Register ( ther_profile_accessed );
+	Thermometer_Register ( ble_gatt_accessed );
 
 	ble_start();
 

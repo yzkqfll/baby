@@ -57,12 +57,10 @@ extern "C"
 // Thermomometer Task Events
 #define TH_START_DEVICE_EVT                              0x0001
 #define TH_PERIODIC_MEAS_EVT                             0x0002
-#define TH_ADV_IN_CONNECTION_EVT                         0x0004
 #define TH_PERIODIC_IMEAS_EVT                            0x0008
 #define TH_START_DISCOVERY_EVT                           0x0010
 #define TH_CLOCK_UPDATE_EVT                              0x0020
 #define TH_DISCONNECT_EVT                                0x0040  
-#define TH_CCC_UPDATE_EVT                                0x0080  
 /*********************************************************************
  * MACROS
  */
