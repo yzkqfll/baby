@@ -20,8 +20,8 @@
 #include "timeapp.h"
 #include "OSAL_Clock.h"
 
-#include "uart.h"
-#include "uart_comm.h"
+#include "ther_uart.h"
+#include "ther_uart_comm.h"
 
 #include "ther_ble.h"
 
@@ -56,8 +56,8 @@ static const char *gap_state_str[] = {
 
 // Use limited discoverable mode to advertise for 30.72s, and then stop, or
 // use general discoverable mode to advertise indefinitely
-#define DEFAULT_DISCOVERABLE_MODE             GAP_ADTYPE_FLAGS_LIMITED
-//#define DEFAULT_DISCOVERABLE_MODE           GAP_ADTYPE_FLAGS_GENERAL
+//#define DEFAULT_DISCOVERABLE_MODE             GAP_ADTYPE_FLAGS_LIMITED
+#define DEFAULT_DISCOVERABLE_MODE           GAP_ADTYPE_FLAGS_GENERAL
 
 // How often to perform periodic event
 #define PERIODIC_EVT_PERIOD                   1000
@@ -151,6 +151,20 @@ void ble_start_advertise(void)
 	GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &val);
 
 	return;
+}
+
+/*
+ * Set advertising interval
+ * ms ??
+ */
+static void ble_set_adv_interval(unsigned long interval)
+{
+
+	GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MIN, interval);
+	GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MAX, interval);
+
+	GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MIN, interval);
+	GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MAX, interval);
 }
 
 /*
@@ -332,6 +346,7 @@ unsigned char ther_ble_init(uint8 task_id)
 		GAPRole_SetParameter( GAPROLE_TIMEOUT_MULTIPLIER, sizeof( uint16 ), &desired_conn_timeout );
 	}
 
+	ble_set_adv_interval(2000);
 	if (0)
 	{
 		/*

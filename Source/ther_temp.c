@@ -21,8 +21,8 @@
 #include "timeapp.h"
 #include "OSAL_Clock.h"
 
-#include "uart.h"
-#include "uart_comm.h"
+#include "ther_uart.h"
+#include "ther_uart_comm.h"
 
 //static unsigned int pseudo_temp = 360;
 static unsigned int pseudo_temp = 0X000173;

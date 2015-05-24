@@ -4,8 +4,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "uart.h"
-#include "uart_comm.h"
+#include "ther_uart.h"
+#include "ther_uart_comm.h"
 
 #define MODULE "[UART COMM] "
 
@@ -14,8 +14,10 @@ static unsigned char log_level = LOG_DBG;
 #define PRINT_BUF_LEN 200
 static char print_buf[PRINT_BUF_LEN];
 
-#define PRINT_PORT 0
+
 #define USER_INPUT_PORT 0
+
+#define PRINT_PORT USER_INPUT_PORT
 
 static void msg_dispatch(unsigned char port, unsigned char *buf, unsigned char len)
 {

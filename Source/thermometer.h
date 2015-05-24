@@ -61,6 +61,8 @@ extern "C"
 #define TH_START_DISCOVERY_EVT                           0x0010
 #define TH_CLOCK_UPDATE_EVT                              0x0020
 #define TH_DISCONNECT_EVT                                0x0040  
+#define TH_BUZZER_EVT									 0x0080
+
 /*********************************************************************
  * MACROS
  */

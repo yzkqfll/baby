@@ -1,6 +1,6 @@
 
-#ifndef __UART_H__
-#define __UART_H__
+#ifndef __THER_UART_H__
+#define __THER_UART_H__
 
 int uart_init(unsigned char port, unsigned char baud_rate,
 			void (*hook)(unsigned char port, unsigned char *buf, unsigned char len));

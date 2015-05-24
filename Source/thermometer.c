@@ -21,14 +21,15 @@
 #include "timeapp.h"
 #include "OSAL_Clock.h"
 
-#include "uart.h"
-#include "uart_comm.h"
+#include "ther_uart.h"
+#include "ther_uart_comm.h"
 
 #include "ther_ble.h"
 
 #include "ther_comm.h"
 
 #include "ther_button.h"
+#include "ther_buzzer.h"
 
 #define MODULE "[THER] "
 
@@ -182,6 +183,8 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 	}
 
 	if(events & TH_PERIODIC_MEAS_EVT) {
+		ther_play_music(BUZZER_MUSIC_SEND_TEMP);
+
 		ther_temp_periodic_meas(ti);
 
 		return (events ^ TH_PERIODIC_MEAS_EVT);
@@ -193,6 +196,11 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 		return (events ^ TH_PERIODIC_IMEAS_EVT);
 	}
 
+	if (events & TH_BUZZER_EVT) {
+		ther_check_music_end();
+
+		return (events ^ TH_BUZZER_EVT);
+	}
 
 	return 0;
 }
@@ -220,6 +228,11 @@ void Thermometer_Init(uint8 task_id)
 
 	/* uart init */
 	uart_comm_init();
+
+	/* buzzer init */
+	ther_buzzer_init(ti->task_id);
+
+	ther_play_music(BUZZER_MUSIC_SYS_BOOT);
 
 	/* iic init */
 

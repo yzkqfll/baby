@@ -51,7 +51,7 @@
 #include "gapbondmgr.h"
 #include "ther_profile.h"
 
-#include "uart_comm.h"
+#include "ther_uart.h"
 
 #define MODULE "[TH PROFILE] "
 

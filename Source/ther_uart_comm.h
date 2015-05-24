@@ -1,6 +1,6 @@
 
-#ifndef __UART_COMM_H__
-#define __UART_COMM_H__
+#ifndef __THER_UART_COMM_H__
+#define __THER_UART_COMM_H__
 
 void uart_comm_init(void);
 

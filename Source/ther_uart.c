@@ -7,12 +7,9 @@
 #include "Comdef.h"
 #include "OSAL.h"
 #include "hal_uart.h"
-#include <stdarg.h>
-#include <stdio.h>
-#include "Thermometer.h"
 #include "Hal_dma.h"
 
-#include "uart.h"
+#include "ther_uart.h"
 
 #define UART_NUM 1 /* Should HAL_UART_PORT_MAX */
 
@@ -20,7 +17,6 @@
 #define UART_TX_BUF_LEN 128
 
 struct uart_information {
-	unsigned char init_ok;
 
 	unsigned char rx_buf[UART_RX_BUF_LEN];
 
@@ -123,5 +119,6 @@ int uart_recv(int port, unsigned char **rx_buf, unsigned short *rx_len)
 
 int uart_send(int port, unsigned char *buf, unsigned short len)
 {
+
 	return HalUARTWrite(port, buf, len);
 }

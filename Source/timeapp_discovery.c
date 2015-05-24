@@ -49,7 +49,6 @@
 #include "timeapp.h"
 #include "battservice.h"
 
-#include "uart_comm.h"
 
 /*********************************************************************
  * MACROS
