@@ -20,6 +20,8 @@
 #include "timeapp.h"
 #include "OSAL_Clock.h"
 
+#include "battservice.h"
+
 #include "ther_uart.h"
 #include "ther_uart_comm.h"
 
@@ -402,6 +404,8 @@ unsigned char ther_ble_init(uint8 task_id)
 	GATTServApp_AddService( GATT_ALL_SERVICES ); // GATT attributes
 	Thermometer_AddService( GATT_ALL_SERVICES );
 	DevInfo_AddService( );
+
+	Batt_AddService( );
 
 	// Register for Thermometer service callback
 	Thermometer_Register ( ble_gatt_accessed );

@@ -1560,6 +1560,7 @@
           <state>$PROJ_DIR$\..\..\Profiles\Roles</state>
           <state>$PROJ_DIR$\..\..\Profiles\DevInfo</state>
           <state>$PROJ_DIR$\..\..\Profiles\Batt</state>
+          <state>$PROJ_DIR$\..\..\Profiles\HidDev</state>
           <state>$PROJ_DIR$\..\Source</state>
         </option>
         <option>
@@ -2456,6 +2457,12 @@
   </group>
   <group>
     <name>PROFILES</name>
+    <file>
+      <name>$PROJ_DIR$\..\..\Profiles\Batt\battservice.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\Profiles\Batt\battservice.h</name>
+    </file>
     <file>
       <name>$PROJ_DIR$\..\..\Profiles\DevInfo\devinfoservice.c</name>
     </file>
