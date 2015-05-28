@@ -30,6 +30,7 @@
 
 #include "ther_button.h"
 #include "ther_buzzer.h"
+#include "ther_oled_9639.h"
 
 #define MODULE "[THER] "
 
@@ -234,9 +235,8 @@ void Thermometer_Init(uint8 task_id)
 
 	ther_play_music(BUZZER_MUSIC_SYS_BOOT);
 
-	/* iic init */
-
 	/* oled init */
+	oled_init();
 
 	/* gpio init */
 

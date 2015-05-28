@@ -2171,6 +2171,12 @@
   <group>
     <name>APP</name>
     <file>
+      <name>$PROJ_DIR$\..\Source\hal_i2c.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\hal_i2c.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\Source\OSAL_thermometer.c</name>
     </file>
     <file>
@@ -2186,10 +2192,22 @@
       <name>$PROJ_DIR$\..\Source\ther_button.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\Source\ther_buzzer.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\ther_buzzer.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\Source\ther_comm.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\Source\ther_comm.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\ther_oled_9639.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\ther_oled_9639.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\Source\ther_profile.c</name>
@@ -2509,12 +2527,6 @@
       <name>$PROJ_DIR$\..\..\common\cc2540\OnBoard.h</name>
     </file>
   </group>
-  <file>
-    <name>$PROJ_DIR$\..\Source\ther_buzzer.c</name>
-  </file>
-  <file>
-    <name>$PROJ_DIR$\..\Source\ther_buzzer.h</name>
-  </file>
 </project>
 
 
