@@ -128,17 +128,35 @@ static void ther_handle_gatt_access_msg(struct ther_info *ti, struct ble_msg *ms
 	return;
 }
 
+
+static void ther_handle_button(struct button_msg *msg)
+{
+	switch (msg->type) {
+	case SHORT_PRESS:
+		print(LOG_INFO, MODULE "user press button\r\n");
+		break;
+
+	case LONG_PRESS:
+		print(LOG_INFO, MODULE "user long press button\r\n");
+		break;
+
+	case BUTTON_UNKNOWN:
+		print(LOG_INFO, MODULE "unknow button\r\n");
+		break;
+	}
+
+	return;
+}
+
 static void ther_dispatch_msg(struct ther_info *ti, osal_event_hdr_t *msg)
 {
-	keyChange_t *kmsg;
 
 /*	print(LOG_DBG, MODULE "dispatch event %d(0x%02x), staus %d\r\n",
 			msg->event, msg->event, msg->status);*/
 
 	switch (msg->event) {
-	case KEY_CHANGE:
-		kmsg = (keyChange_t *)msg;
-		ther_handle_button(kmsg->state, kmsg->keys);
+	case USER_BUTTON_EVENT:
+		ther_handle_button((struct button_msg *)msg);
 		break;
 
 	case GATT_MSG_EVENT:
@@ -203,6 +221,12 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 		return (events ^ TH_BUZZER_EVT);
 	}
 
+	if (events & TH_BUTTON_EVT) {
+		ther_measure_button_time();
+
+		return (events ^ TH_BUTTON_EVT);
+	}
+
 	return 0;
 }
 
@@ -232,17 +256,15 @@ void Thermometer_Init(uint8 task_id)
 
 	/* buzzer init */
 	ther_buzzer_init(ti->task_id);
-
 	ther_play_music(BUZZER_MUSIC_SYS_BOOT);
 
 	/* oled init */
 	oled_init();
 
-	/* gpio init */
-
 	/* adc init */
 
 	/* button init */
+	ther_button_init(ti->task_id);
 
 	ther_ble_init(ti->task_id);
 

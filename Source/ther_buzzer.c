@@ -70,7 +70,7 @@ struct ther_buzzer buzzer;
 #define PLUSE_NUM 4
 static unsigned long music_pluse[BUZZER_MUSIC_NR][PLUSE_NUM] =  {
 	300, 200, 200, 100,
-	800, 200, 300, 100,
+	400, 200, 300, 100,
 };
 static unsigned char music_tone[BUZZER_MUSIC_NR] = {
 	TONE_HIGH,
