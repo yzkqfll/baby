@@ -23,14 +23,13 @@
  * 20mA max
  *
  * Registers
- *     P1SEL -> set as  peripheral I/O signal(1: peripheral I/O)
+ *     P1SEL -> set as peripheral I/O signal(1: peripheral I/O)
  *     P1DIR -> set the direction(1: output)
  *     P1_0  -> value of P1.0
  *
  * Questions:
  *
- * 7.2     Low I/O Supply Voltage
- *
+ * Chapter 7.2   Low I/O Supply Voltage
  *
  */
 
@@ -38,7 +37,7 @@
  * timer 4
  */
 #define BUZZER_PIN P1_0
-#define PIN_OFFSET 0 /* P1.0 */
+#define BUZZER_BIT 0  /* P1.0 */
 
 /* Defines for Timer 4 */
 #define HAL_T4_CC0_VALUE                125   /* provides pulse width of 125 usec */
@@ -59,22 +58,20 @@ enum {
 struct ther_buzzer {
 	unsigned char task_id;
 
-	unsigned char music;
-	unsigned char cur_pluse_step;
+	unsigned char music_book;
+	unsigned char cur_step;
 };
 struct ther_buzzer buzzer;
 
 /*
  * music book
  */
-#define PLUSE_NUM 4
-static unsigned long music_pluse[BUZZER_MUSIC_NR][PLUSE_NUM] =  {
-	300, 200, 200, 100,
-	400, 200, 300, 100,
-};
-static unsigned char music_tone[BUZZER_MUSIC_NR] = {
-	TONE_HIGH,
-	TONE_LOW,
+#define TONE_OFFSET 0
+#define LEN 5
+static const unsigned short music_books[BUZZER_MUSIC_NR][LEN] =  {
+	TONE_HIGH, 300, 200, 200, 100, /* sys boot */
+	TONE_LOW, 400, 200, 300, 100,  /* send temp */
+	TONE_LOW, 400, 200, 300, 100,  /* warning */
 };
 
 static void start_buzzer(unsigned char tone)
@@ -128,14 +125,14 @@ static void stop_buzzer(void)
 //	P1SEL &= (uint8) ~HAL_BUZZER_P1_GPIO_PINS;
 }
 
-void ther_play_music(unsigned char music)
+void ther_play_music(unsigned char music_book)
 {
 	struct ther_buzzer *b = &buzzer;
 
 //	print(LOG_DBG, MODULE "play music %d\r\n", music);
 
-	b->music = music;
-	b->cur_pluse_step = 0;
+	b->music_book = music_book;
+	b->cur_step = 0;
 
 	osal_start_timerEx(b->task_id, TH_BUZZER_EVT, 200);
 }
@@ -146,32 +143,34 @@ void ther_stop_music(void)
 
 	print(LOG_DBG, MODULE "stop music %d\r\n");
 
-	if (b->cur_pluse_step) {
+	if (b->cur_step) {
 		osal_stop_timerEx(b->task_id, TH_BUZZER_EVT);
 
 		stop_buzzer();
-		b->cur_pluse_step = 0;
+		b->cur_step = 1;
 	}
 }
 
-void ther_check_music_end(void)
+void ther_buzzer_play_music(void)
 {
 	struct ther_buzzer *b = &buzzer;
+	unsigned char tone;
 
-	if (b->cur_pluse_step < PLUSE_NUM) {
-		if (b->cur_pluse_step % 2 == 0) {
+	if (b->cur_step < LEN) {
+		if (b->cur_step % 2 != 0) {
 			/* buzzer */
-			start_buzzer(music_tone[b->music]);
+			tone = music_books[b->music_book][TONE_OFFSET];
+			start_buzzer(tone);
 		} else {
 			/* slient */
 			stop_buzzer();
 		}
 
-		osal_start_timerEx(b->task_id, TH_BUZZER_EVT, music_pluse[b->music][b->cur_pluse_step]);
+		osal_start_timerEx(b->task_id, TH_BUZZER_EVT, music_books[b->music_book][b->cur_step]);
 
-		b->cur_pluse_step++;
+		b->cur_step++;
 	} else {
-		b->cur_pluse_step = 0;
+		b->cur_step = 1;
 	}
 }
 
@@ -184,8 +183,8 @@ void ther_buzzer_init(unsigned char task_id)
 	BUZZER_PIN = 0;
 
 	/* dir: output */
-	P1DIR |= 1 << PIN_OFFSET;
+	P1DIR |= BV(BUZZER_BIT);
 
 	/* as peripheral */
-	P1SEL |= 1 << PIN_OFFSET;
+	P1SEL |= BV(BUZZER_BIT);
 }

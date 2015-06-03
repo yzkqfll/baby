@@ -486,6 +486,17 @@ void oled_picture_inverse(void)
 	o->inverse = !o->inverse;
 }
 
+static bool flag = TRUE;
+void oled_test(void)
+{
+	if (flag)
+		oled_set_vdd_power(VDD_POWER_ON);
+	else
+		oled_set_vdd_power(VDD_POWER_OFF);
+
+	flag = !flag;
+}
+
 void oled_init(void)
 {
 	print(LOG_INFO, MODULE "oled9639 init ok\r\n");
@@ -498,17 +509,15 @@ void oled_init(void)
 	 */
 	P1SEL &= ~(1 << BOOST_EN_PIN);
 	P1DIR |= 1 << BOOST_EN_PIN;
-	oled_set_vcc_power(VCC_POWER_OFF);
+	oled_set_vcc_power(VCC_POWER_ON);
 
 	/*
 	 * VDD enable pin setup
 	 * p2.0
 	 */
-	P2SEL &= ~(1 << VDD_EN_PIN);
-	P2DIR |= 1 << VDD_EN_PIN;
-	oled_set_vdd_power(VDD_POWER_OFF);
-
-//	oled_set_vdd_power(VDD_POWER_ON);
+	P2SEL &= ~BV(VDD_EN_PIN);
+	P2DIR |= BV(VDD_EN_PIN);
+	oled_set_vdd_power(VDD_POWER_ON);
 
 	oled_set_display(DISPLAY_OFF);
 
@@ -525,7 +534,7 @@ void oled_init(void)
 
 	set_segment_remap(REMAP_OFF); /* yuanjie: REMAP_ON */
 
-	set_com_remap(COM_REMAP_DISABLE); /* yuanjie: COM_REMAP_ENABLE */
+	set_com_remap(COM_REMAP_ENABLE); /* yuanjie: COM_REMAP_ENABLE */
 	set_com_config(COM_CONFIG(ALTERNATIVE_COM_CONFIG, DISABLE_COM_REMAP));
 
 	set_contrast(0xCF);
@@ -539,9 +548,10 @@ void oled_init(void)
 
 	fill_screen(0x0);
 
-//	fill_block(4, 4, 88, 95, 0x40);
+//	fill_block(0, 0, 0, 7, 0xff);
 //	write_block(2, 4, 5, 17, number_24_13[0]);
-	if (1)
+	write_block(0, 2, 0, 12, number_24_13[0]);
+	if (0)
 	{
 		unsigned char i, p = 0;
 

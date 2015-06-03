@@ -139,10 +139,11 @@ static void ther_handle_button(struct button_msg *msg)
 {
 	switch (msg->type) {
 	case SHORT_PRESS:
-//		print(LOG_INFO, MODULE "user press button\r\n");
+		print(LOG_INFO, MODULE "user press button\r\n");
 
+		oled_picture_inverse();
+		ther_play_music(BUZZER_MUSIC_SYS_BOOT);
 		ther_get_current_temp();
-
 		break;
 
 	case LONG_PRESS:
@@ -229,7 +230,7 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 	}
 
 	if (events & TH_BUZZER_EVT) {
-		ther_check_music_end();
+		ther_buzzer_play_music();
 
 		return (events ^ TH_BUZZER_EVT);
 	}
@@ -274,15 +275,15 @@ void Thermometer_Init(uint8 task_id)
 	/* uart init */
 	uart_comm_init();
 
+	/* button init */
+	ther_button_init(ti->task_id);
+
 	/* buzzer init */
 	ther_buzzer_init(ti->task_id);
 	ther_play_music(BUZZER_MUSIC_SYS_BOOT);
 
 	/* oled init */
 	oled_init();
-
-	/* button init */
-	ther_button_init(ti->task_id);
 
 	/* temp init */
 	ther_temp_init();

@@ -22,6 +22,7 @@ void oled_display_on(void);
 void oled_light_off(void);
 void oled_show_welcome(void);
 void oled_picture_inverse(void);
+void oled_test(void);
 
 #endif
 

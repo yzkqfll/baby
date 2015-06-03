@@ -75,7 +75,9 @@ static unsigned short ther_get_temp(unsigned char presision)
 	return temp;
 }
 
-
+/*
+ * return value: 377 => 37.7 du
+ */
 unsigned short ther_get_current_temp(void)
 {
 	struct ther_temp *t = &ther_temp;
@@ -94,11 +96,11 @@ unsigned short ther_get_current_temp(void)
 		t->presision_used = LOW_PRESISION;
 	}
 
-	// test
-//	t->presision_used = !t->presision_used;
+	disable_ldo();
 
 	return temp;
 }
+
 
 void ther_temp_init(void)
 {
@@ -114,11 +116,19 @@ void ther_temp_init(void)
 	 *   P0.1:  low resolution adc pin
 	 */
 
-	/* P2.3: gpio, output */
+	/*
+	 * P2.3: gpio, output
+	 *
+	 * P2.3 is mulplex with XOSC32K, so if we want to use it as gpio,
+	 * we need set OSC32K_INSTALLED=FALSE in IAR options.
+	 *
+	 * see datasheet <7.8 32-kHz XOSC Input>
+	 */
 	P2SEL &= ~BV(1); /* P2.3 function select: GPIO */
 	P2DIR |= BV(LDO_ENABLE_BIT); /* P2.3 as output */
-	P2INP &= ~BV(7); /* all port2 pins pull up */
-	P2INP |= BV(LDO_ENABLE_BIT); /* 3-state */
+//	P2INP &= ~BV(7); /* all port2 pins pull up */
+//	P2INP |= BV(LDO_ENABLE_BIT); /* 3-state */
+
 	disable_ldo();
 
 	/* P0.7, P0.0, P0.1: input, 3-state */

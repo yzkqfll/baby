@@ -79,6 +79,11 @@ void ther_button_init(unsigned char task_id)
 
 	bt->task_id = task_id;
 
+	/*
+	 * P1.3 is push button
+	 *   gpio, output, interrupt triggered(Port 1 vector), rising edge
+	 */
+
 	/* GPIO, and as input */
 	P1SEL &= ~BV(PUSH_BUTTON_BIT);
 	P1DIR &= ~BV(PUSH_BUTTON_BIT);
