@@ -1,37 +1,131 @@
 
-#include "bcomdef.h"
+#include "Comdef.h"
 #include "OSAL.h"
-#include "OSAL_PwrMgr.h"
-#include "OnBoard.h"
-#include "hal_adc.h"
-#include "hal_led.h"
-#include "hal_lcd.h"
-#include "hal_key.h"
-#include "gatt.h"
-#include "hci.h"
-#include "gapgattserver.h"
-#include "gattservapp.h"
-#include "gatt_profile_uuid.h"
-#include "linkdb.h"
-#include "peripheral.h"
-#include "gapbondmgr.h"
-#include "ther_profile.h"
-#include "devinfoservice.h"
-#include "thermometer.h"
-#include "timeapp.h"
-#include "OSAL_Clock.h"
+#include "hal_drivers.h"
+
+#include "hal_board.h"
 
 #include "ther_uart.h"
 #include "ther_uart_comm.h"
 
-//static unsigned int pseudo_temp = 360;
-static unsigned int pseudo_temp = 0X000173;
+#include "ther_adc.h"
+#include "ther_temp_cal.h"
 
-unsigned int get_current_temp(void)
+#define MODULE "[THER TEMP] "
+
+/* p2.3: ldo enable */
+#define LDO_ENABLE_PIN P2_3
+#define LDO_ENABLE_BIT 3
+
+/* p0.7: Vref */
+#define ADC_REF_VOLTAGE_PIN P0_7
+#define ADC_REF_VOLTAGE_BIT 7
+
+/* p0.0: high presision temp */
+#define ADC_HIGH_PRECISION_PIN P0_0
+#define ADC_HIGH_RRECISION_BIT 0
+
+/* p0.1: low presision temp */
+#define ADC_LOW_PRECISION_PIN P0_1
+#define ADC_LOW_PRECISION_BIT 1
+
+struct ther_temp {
+	unsigned char presision_used;
+
+	unsigned short low_presision_pre_adc;
+	unsigned short low_presision_pre_temp;
+};
+static struct ther_temp ther_temp;
+
+
+static void enable_ldo(void)
 {
-	pseudo_temp++;
-	if (pseudo_temp >= 400)
-		pseudo_temp = 300;
+	LDO_ENABLE_PIN = 1;
+}
 
-	return pseudo_temp;
+static void disable_ldo(void)
+{
+	LDO_ENABLE_PIN = 0;
+}
+
+/*
+ *  channel 0(AIN0) is high presision
+ *  channel 1(AIN1) is low presision
+ */
+static unsigned short ther_get_temp(unsigned char presision)
+{
+	unsigned short adc_val, temp;
+	float sensor_res;
+	unsigned char channel;
+
+	if (presision == HIGH_PRESISION) {
+		channel = HAL_ADC_CHANNEL_0;
+	} else {
+		channel = HAL_ADC_CHANNEL_1;
+	}
+
+	adc_val = read_adc(channel, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AIN7);
+
+	sensor_res = temp_cal_get_res_by_adc(presision, adc_val);
+	temp = temp_cal_get_temp_by_res(sensor_res);
+
+	print(LOG_DBG, MODULE "ch %d adc %d, Rsensor %f, temp %d\r\n",
+			channel, adc_val, sensor_res, temp);
+
+	return temp;
+}
+
+
+unsigned short ther_get_current_temp(void)
+{
+	struct ther_temp *t = &ther_temp;
+	unsigned short temp; /* 377 => 37.7 du */
+
+	enable_ldo();
+
+	temp = ther_get_temp(t->presision_used);
+
+	if ((t->presision_used == LOW_PRESISION) && (temp > 290) && (temp < 450)) {
+		print(LOG_INFO, MODULE "change to high presision\r\n");
+		t->presision_used = HIGH_PRESISION;
+
+	} else if ((t->presision_used == HIGH_PRESISION) && (temp < 290 || temp > 450)) {
+		print(LOG_INFO, MODULE "change to low presision\r\n");
+		t->presision_used = LOW_PRESISION;
+	}
+
+	// test
+//	t->presision_used = !t->presision_used;
+
+	return temp;
+}
+
+void ther_temp_init(void)
+{
+	struct ther_temp *t = &ther_temp;
+
+	t->presision_used = LOW_PRESISION;
+
+	/*
+	 * init adc pins:
+	 *   P2.3:  LDO enable pin
+	 *   P0.7:  reference voltage
+	 *   P0.0:  high resolution adc pin
+	 *   P0.1:  low resolution adc pin
+	 */
+
+	/* P2.3: gpio, output */
+	P2SEL &= ~BV(1); /* P2.3 function select: GPIO */
+	P2DIR |= BV(LDO_ENABLE_BIT); /* P2.3 as output */
+	P2INP &= ~BV(7); /* all port2 pins pull up */
+	P2INP |= BV(LDO_ENABLE_BIT); /* 3-state */
+	disable_ldo();
+
+	/* P0.7, P0.0, P0.1: input, 3-state */
+	P0SEL |= (BV(ADC_REF_VOLTAGE_BIT) | BV(ADC_HIGH_RRECISION_BIT) | BV(ADC_LOW_PRECISION_BIT));
+	/* override P0SEL */
+	ADCCFG |= (BV(ADC_REF_VOLTAGE_BIT) | BV(ADC_HIGH_RRECISION_BIT) | BV(ADC_LOW_PRECISION_BIT));
+
+	P0DIR &= ~(BV(ADC_REF_VOLTAGE_BIT) | BV(ADC_HIGH_RRECISION_BIT) | BV(ADC_LOW_PRECISION_BIT));
+	P0INP |= BV(ADC_REF_VOLTAGE_BIT) | BV(ADC_HIGH_RRECISION_BIT) | BV(ADC_LOW_PRECISION_BIT); /* 3-state */
 }

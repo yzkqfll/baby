@@ -31,6 +31,7 @@
 #include "ther_button.h"
 #include "ther_buzzer.h"
 #include "ther_oled_9639.h"
+#include "ther_temp.h"
 
 #define MODULE "[THER] "
 
@@ -75,7 +76,7 @@ static void ther_temp_periodic_imeas(struct ther_info *ti)
 	return;
 }
 
-static void ther_handle_gatt_access_msg(struct ther_info *ti, struct ble_msg *msg)
+static void ther_handle_gatt_access_msg(struct ther_info *ti, struct ble_gatt_access_msg *msg)
 {
 	switch (msg->type) {
 
@@ -128,12 +129,20 @@ static void ther_handle_gatt_access_msg(struct ther_info *ti, struct ble_msg *ms
 	return;
 }
 
+static void ther_handle_ble_status(struct ther_info *ti, struct ble_status_change_msg *msg)
+{
+	ti->temp_indication_enable = FALSE;
+	ti->temp_notification_enable = FALSE;
+}
 
 static void ther_handle_button(struct button_msg *msg)
 {
 	switch (msg->type) {
 	case SHORT_PRESS:
-		print(LOG_INFO, MODULE "user press button\r\n");
+//		print(LOG_INFO, MODULE "user press button\r\n");
+
+		ther_get_current_temp();
+
 		break;
 
 	case LONG_PRESS:
@@ -164,7 +173,11 @@ static void ther_dispatch_msg(struct ther_info *ti, osal_event_hdr_t *msg)
 		break;
 
 	case BLE_GATT_ACCESS_EVENT:
-		ther_handle_gatt_access_msg(ti, (struct ble_msg *)msg);
+		ther_handle_gatt_access_msg(ti, (struct ble_gatt_access_msg *)msg);
+		break;
+
+	case BLE_STATUS_CHANGE_EVENT:
+		ther_handle_ble_status(ti, (struct ble_status_change_msg *)msg);
 		break;
 
 	default:
@@ -227,6 +240,13 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 		return (events ^ TH_BUTTON_EVT);
 	}
 
+	if (events & TH_TEST_EVT) {
+		oled_picture_inverse();
+		osal_start_timerEx(ti->task_id, TH_TEST_EVT, 3000);
+
+		return (events ^ TH_TEST_EVT);
+	}
+
 	return 0;
 }
 
@@ -261,13 +281,14 @@ void Thermometer_Init(uint8 task_id)
 	/* oled init */
 	oled_init();
 
-	/* adc init */
-
 	/* button init */
 	ther_button_init(ti->task_id);
 
+	/* temp init */
+	ther_temp_init();
+
 	ther_ble_init(ti->task_id);
 
-	// Register for all key events - This app will handle all key events
-	RegisterForKeys(ti->task_id);
+	/* test */
+//	osal_start_timerEx(ti->task_id, TH_TEST_EVT, 2000);
 }

@@ -132,7 +132,7 @@ void ther_play_music(unsigned char music)
 {
 	struct ther_buzzer *b = &buzzer;
 
-	print(LOG_DBG, MODULE "play music %d\r\n", music);
+//	print(LOG_DBG, MODULE "play music %d\r\n", music);
 
 	b->music = music;
 	b->cur_pluse_step = 0;
@@ -183,7 +183,7 @@ void ther_buzzer_init(unsigned char task_id)
 
 	BUZZER_PIN = 0;
 
-	/* dir */
+	/* dir: output */
 	P1DIR |= 1 << PIN_OFFSET;
 
 	/* as peripheral */

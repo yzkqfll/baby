@@ -131,7 +131,7 @@ enum {
 	#define SET_CHARGE_PUMP(x) ((1 << 4) | (x) << 2)
 
 /*
- * 0 ~ 9
+ * Font 0 ~ 9
  */
 static unsigned char number_16_8[][16] = {
 	0x00, 0x00, 0x10, 0x08, 0xFC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x20, 0x3F, 0x20, 0x20, 0x00,
@@ -140,6 +140,12 @@ static unsigned char number_24_13[][39] = {
 	0x00, 0x00, 0x40, 0x60, 0x30, 0x18, 0xFE, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0x60, 0x60, 0x60, 0x7F, 0x7F, 0x60, 0x60, 0x60, 0x00, 0x00
 };
 
+struct oled_9639 {
+	bool inverse;
+};
+static struct oled_9639 oled = {
+	.inverse = FALSE,
+};
 
 /*
  * Send command to OLED
@@ -468,6 +474,18 @@ void oled_show_bt_link(bool linked)
 
 }
 
+void oled_picture_inverse(void)
+{
+	struct oled_9639 *o = &oled;
+
+	if (o->inverse)
+		set_display_inverse(INVERSE_OFF);
+	else
+		set_display_inverse(INVERSE_ON);
+
+	o->inverse = !o->inverse;
+}
+
 void oled_init(void)
 {
 	print(LOG_INFO, MODULE "oled9639 init ok\r\n");
@@ -475,22 +493,22 @@ void oled_init(void)
 	HalI2CInit(OLED_IIC_ADDR, i2cClock_123KHZ);
 
 	/*
-	 * BOOST enable pin setup
+	 * VBOOST enable pin setup
+	 * p1.2
 	 */
-	P1DIR |= 1 << BOOST_EN_PIN;
 	P1SEL &= ~(1 << BOOST_EN_PIN);
-	BOOST_EN_PIN_VAL = 0;
-
-	/*
-	 * BOOST enable pin setup
-	 */
-	P2DIR |= 1 << VDD_EN_PIN;
-	P2SEL &= ~(1 << VDD_EN_PIN);
-	VDD_EN_PIN_VAL = 0;
-
+	P1DIR |= 1 << BOOST_EN_PIN;
 	oled_set_vcc_power(VCC_POWER_OFF);
 
-	oled_set_vdd_power(VDD_POWER_ON);
+	/*
+	 * VDD enable pin setup
+	 * p2.0
+	 */
+	P2SEL &= ~(1 << VDD_EN_PIN);
+	P2DIR |= 1 << VDD_EN_PIN;
+	oled_set_vdd_power(VDD_POWER_OFF);
+
+//	oled_set_vdd_power(VDD_POWER_ON);
 
 	oled_set_display(DISPLAY_OFF);
 
@@ -522,10 +540,11 @@ void oled_init(void)
 	fill_screen(0x0);
 
 //	fill_block(4, 4, 88, 95, 0x40);
-	write_block(2, 4, 5, 17, number_24_13[0]);
-	if (0)
+//	write_block(2, 4, 5, 17, number_24_13[0]);
+	if (1)
 	{
 		unsigned char i, p = 0;
+
 
 		for (i = 0; i < 96; ) {
 			fill_block(p % 5, p % 5, i, i + 7, 0xff);

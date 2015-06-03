@@ -87,7 +87,7 @@ static uint8 scanResponseData[] =
 {
   0x12,   // length of this data
   GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-  't',
+  '0',
   'h',
   'e',
   'r',
@@ -136,7 +136,7 @@ static uint8 advertData[] =
 };
 
 // Device name attribute value
-static uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "Thermometer Sensor";
+static uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "0hermometer Sensor";
 
 unsigned short ble_get_gap_handle(void)
 {
@@ -208,8 +208,17 @@ static void ble_gap_role_new_state(gaprole_States_t new_state)
 			break;
 	}
 
-	if (bi->gap_handle == GAPROLE_CONNECTED && new_state != GAPROLE_CONNECTED) {
+	if (bi->gap_role_state == GAPROLE_CONNECTED && new_state != GAPROLE_CONNECTED) {
+		struct ble_status_change_msg *msg;
 
+		msg = (struct ble_status_change_msg *)osal_msg_allocate(sizeof(struct ble_status_change_msg));
+		if (!msg) {
+			print(LOG_INFO, MODULE "fail to allocate <struct ble_status_change_msg>\r\n");
+			return;
+		}
+		msg->hdr.event = BLE_STATUS_CHANGE_EVENT;
+		msg->type = BLE_DISCONNECT;
+		osal_msg_send(bi->task_id, (uint8 *)msg);
 	}
 
 	bi->gap_role_state = new_state;
@@ -225,9 +234,9 @@ static void ble_gap_role_new_state(gaprole_States_t new_state)
 static void ble_gatt_accessed(uint8 event)
 {
 	struct ther_ble_info *bi = &ble_info;
-	struct ble_msg *msg;
+	struct ble_gatt_access_msg *msg;
 
-	msg = (struct ble_msg *)osal_msg_allocate(sizeof(struct ble_msg));
+	msg = (struct ble_gatt_access_msg *)osal_msg_allocate(sizeof(struct ble_gatt_access_msg));
 	if (!msg) {
 		print(LOG_INFO, MODULE "fail to allocate <struct ble_msg>\r\n");
 		return;
@@ -348,7 +357,7 @@ unsigned char ther_ble_init(uint8 task_id)
 		GAPRole_SetParameter( GAPROLE_TIMEOUT_MULTIPLIER, sizeof( uint16 ), &desired_conn_timeout );
 	}
 
-//	ble_set_adv_interval(2000);
+	ble_set_adv_interval(2000);
 	if (0)
 	{
 		/*
@@ -405,7 +414,7 @@ unsigned char ther_ble_init(uint8 task_id)
 	Thermometer_AddService( GATT_ALL_SERVICES );
 	DevInfo_AddService( );
 
-	Batt_AddService( );
+//	Batt_AddService( );
 
 	// Register for Thermometer service callback
 	Thermometer_Register ( ble_gatt_accessed );

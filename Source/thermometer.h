@@ -63,6 +63,7 @@ extern "C"
 #define TH_DISCONNECT_EVT                                0x0040  
 #define TH_BUZZER_EVT									 0x0080
 #define TH_BUTTON_EVT									 0x0100
+#define TH_TEST_EVT										 0x0200
 
 /*********************************************************************
  * MACROS

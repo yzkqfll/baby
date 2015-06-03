@@ -23,9 +23,19 @@ enum {
 	GATT_UNKNOWN,
 };
 
+struct ble_gatt_access_msg {
+  osal_event_hdr_t hdr;
+  unsigned char type;
+};
 
-struct ble_msg {
-  osal_event_hdr_t hdr; //!< BLE_MSG_EVENT and status
+#define BLE_STATUS_CHANGE_EVENT 0x30
+
+enum {
+	BLE_DISCONNECT = 0,
+};
+
+struct ble_status_change_msg {
+  osal_event_hdr_t hdr;
   unsigned char type;
 };
 

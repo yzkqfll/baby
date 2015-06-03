@@ -32,9 +32,10 @@
 #define THER_INDICATE_FLAG (THERMOMETER_FLAGS_CELCIUS | THERMOMETER_FLAGS_TIMESTAMP | THERMOMETER_FLAGS_TYPE)
 #define THER_NOTIFY_FLAG (THERMOMETER_FLAGS_CELCIUS | THERMOMETER_FLAGS_TIMESTAMP | THERMOMETER_FLAGS_TYPE)
 
-static unsigned char encap_temp_data(unsigned char flag, unsigned long temp, unsigned char *buf)
+static unsigned char encap_temp_data(unsigned char flag, unsigned short temp, unsigned char *buf)
 {
 	unsigned char *start_start = buf;
+	unsigned long format_temp;
 
 	/* a). flag */
 	*buf++ = flag;
@@ -42,10 +43,10 @@ static unsigned char encap_temp_data(unsigned char flag, unsigned long temp, uns
 	if (flag & THERMOMETER_FLAGS_FARENHEIT)
 		temp  = (temp * 9 / 5) + 320;
 
-	temp = 0xFF000000 | temp;
+	format_temp = 0xFF000000 | temp;
 
 	/* b). temp */
-	osal_buffer_uint32(buf, temp);
+	osal_buffer_uint32(buf, format_temp);
 	buf += 4;
 
     /* c). timestamp */
@@ -81,7 +82,7 @@ static unsigned char encap_temp_data(unsigned char flag, unsigned long temp, uns
 void ther_send_temp_notify(uint16 connect_handle)
 {
 	attHandleValueNoti_t notify;
-	unsigned long temp = get_current_temp();
+	unsigned long temp = ther_get_current_temp();
 
 	notify.len = encap_temp_data(THER_NOTIFY_FLAG, temp, notify.value);
 //	notify.handle = THERMOMETER_IMEAS_VALUE_POS;
@@ -96,7 +97,7 @@ void ther_send_temp_notify(uint16 connect_handle)
 void ther_send_temp_indicate(uint16 connect_handle, unsigned char task_id)
 {
 	attHandleValueInd_t indicate;
-	unsigned long temp = get_current_temp();
+	unsigned long temp = ther_get_current_temp();
 
 	indicate.len = encap_temp_data(THER_INDICATE_FLAG, temp, indicate.value);
 	indicate.handle = THERMOMETER_TEMP_VALUE_POS;

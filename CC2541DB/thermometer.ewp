@@ -1370,6 +1370,7 @@
           <state>HAL_LED=FALSE</state>
           <state>HAL_UART=TRUE</state>
           <state>HAL_KEY=FALSE</state>
+          <state>HAL_ADC=FALSE</state>
           <state>DMA_PM=FALSE</state>
         </option>
         <option>
@@ -1556,7 +1557,6 @@
           <state>$PROJ_DIR$\..\..\..\..\Components\ble\controller\include</state>
           <state>$PROJ_DIR$\..\..\..\..\Components\ble\hci</state>
           <state>$PROJ_DIR$\..\..\..\..\Components\ble\host</state>
-          <state>$PROJ_DIR$\..\..\common\cc2540</state>
           <state>$PROJ_DIR$\..\..\Profiles\Roles</state>
           <state>$PROJ_DIR$\..\..\Profiles\DevInfo</state>
           <state>$PROJ_DIR$\..\..\Profiles\Batt</state>
@@ -2177,7 +2177,19 @@
       <name>$PROJ_DIR$\..\Source\hal_i2c.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\Source\OnBoard.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\OnBoard.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\Source\OSAL_thermometer.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\ther_adc.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\ther_adc.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\Source\ther_ble.c</name>
@@ -2220,6 +2232,12 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\Source\ther_temp.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\ther_temp_cal.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\ther_temp_cal.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\Source\ther_uart.c</name>
@@ -2334,15 +2352,6 @@
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\Components\hal\target\CC2540EB\hal_flash.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\Components\hal\target\CC2540EB\hal_key.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\Components\hal\target\CC2540EB\hal_lcd.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\..\..\Components\hal\target\CC2540EB\hal_led.c</name>
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\..\..\Components\hal\target\CC2540EB\hal_sleep.c</name>
@@ -2519,12 +2528,6 @@
     </file>
     <file>
       <name>$PROJ_DIR$\buildConfig.cfg</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\common\cc2540\OnBoard.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\common\cc2540\OnBoard.h</name>
     </file>
   </group>
 </project>
