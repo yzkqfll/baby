@@ -83,7 +83,7 @@ unsigned short ther_get_current_temp(void)
 	struct ther_temp *t = &ther_temp;
 	unsigned short temp; /* 377 => 37.7 du */
 
-	enable_ldo();
+//	enable_ldo();
 
 	temp = ther_get_temp(t->presision_used);
 
@@ -96,7 +96,7 @@ unsigned short ther_get_current_temp(void)
 		t->presision_used = LOW_PRESISION;
 	}
 
-	disable_ldo();
+//	disable_ldo();
 
 	return temp;
 }
@@ -129,7 +129,7 @@ void ther_temp_init(void)
 //	P2INP &= ~BV(7); /* all port2 pins pull up */
 //	P2INP |= BV(LDO_ENABLE_BIT); /* 3-state */
 
-	disable_ldo();
+	enable_ldo();
 
 	/* P0.7, P0.0, P0.1: input, 3-state */
 	P0SEL |= (BV(ADC_REF_VOLTAGE_BIT) | BV(ADC_HIGH_RRECISION_BIT) | BV(ADC_LOW_PRECISION_BIT));

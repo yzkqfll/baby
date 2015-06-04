@@ -31,7 +31,9 @@
 #include "ther_button.h"
 #include "ther_buzzer.h"
 #include "ther_oled_9639.h"
+#include "ther_spi_w25x40cl.h"
 #include "ther_temp.h"
+
 
 #define MODULE "[THER] "
 
@@ -284,10 +286,15 @@ void Thermometer_Init(uint8 task_id)
 
 	/* oled init */
 	oled_init();
+	oled_show_welcome();
+
+	/* spi flash */
+	ther_spi_w25x_init();
 
 	/* temp init */
 	ther_temp_init();
 
+	/* ble init */
 	ther_ble_init(ti->task_id);
 
 	/* test */
