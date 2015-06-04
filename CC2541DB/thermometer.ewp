@@ -2229,6 +2229,18 @@
       <name>$PROJ_DIR$\..\Source\ther_profile.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\Source\ther_spi.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\ther_spi.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\ther_spi_w25x40cl.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\ther_spi_w25x40cl.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\Source\ther_temp.c</name>
     </file>
     <file>
