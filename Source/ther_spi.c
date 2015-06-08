@@ -98,6 +98,10 @@ static uint32 ther_spi_xfer(struct ther_spi_message* message)
 	uint8 * recv_ptr = message->recv_buf;
 	uint8 data = 0xFF;
 
+	if(message->cs_take) {
+		THER_SPI_EN(0);
+	}
+
 	while(size--) {
 		if(send_ptr != NULL) {
 			data = *send_ptr++;
@@ -120,6 +124,10 @@ static uint32 ther_spi_xfer(struct ther_spi_message* message)
 		}
 	}
 
+	if(message->cs_release) {
+		THER_SPI_EN(1);
+	}
+
 	return message->length;
 }
 
@@ -130,6 +138,8 @@ uint32 ther_spi_recv(void *recv_buf, uint32 length)
 	message.send_buf   = NULL;
 	message.recv_buf   = recv_buf;
 	message.length     = length;
+	message.cs_take    = 1;
+	message.cs_release = 1;
 
 	return ther_spi_xfer(&message);
 }
@@ -141,17 +151,60 @@ uint32 ther_spi_send(const void *send_buf, uint32 length)
 	message.send_buf   = send_buf;
 	message.recv_buf   = NULL;
 	message.length     = length;
+	message.cs_take    = 1;
+	message.cs_release = 1;
 
 	return ther_spi_xfer(&message);
 }
 
-void ther_spi_enable(void)
+uint32 ther_spi_send_then_send(const void *send_buf1, uint32 send_length1,
+                               const void *send_buf2, uint32 send_length2)
 {
-	THER_SPI_EN(0);
+	struct ther_spi_message message;
+
+	/* send data1 */
+	message.send_buf   = send_buf1;
+	message.recv_buf   = NULL;
+	message.length     = send_length1;
+	message.cs_take    = 1;
+	message.cs_release = 0;
+	ther_spi_xfer(&message);
+
+	/* send data2 */
+	message.send_buf   = send_buf2;
+	message.recv_buf   = NULL;
+	message.length     = send_length2;
+	message.cs_take    = 0;
+	message.cs_release = 1;
+	ther_spi_xfer(&message);
+
+	return 0;
 }
 
-void ther_spi_disable(void)
+uint32 ther_spi_send_then_recv(const void *send_buf, uint32 send_length,
+                               void *recv_buf, uint32 recv_length)
 {
-	THER_SPI_EN(1);
+	struct ther_spi_message message;
+
+	/* send data1 */
+	message.send_buf   = send_buf;
+	message.recv_buf   = NULL;
+	message.length     = send_length;
+	message.cs_take    = 1;
+	message.cs_release = 0;
+	ther_spi_xfer(&message);
+
+	/* send data2 */
+	message.send_buf   = NULL;
+	message.recv_buf   = recv_buf;
+	message.length     = recv_length;
+	message.cs_take    = 0;
+	message.cs_release = 1;
+	ther_spi_xfer(&message);
+
+	return 0;
 }
+
+
+
 
