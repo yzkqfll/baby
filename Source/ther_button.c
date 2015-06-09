@@ -22,11 +22,11 @@
 
 #define BUTTON_MEASURE_INTERVAL 20
 
-#define SHORT_PRESS_TIME_MIN 30
-#define SHORT_PRESS_TIME_MAX 1000
+#define SHORT_PRESS_TIME 30
+#define LONG_PRESS_TIME 1200
 
 struct ther_button {
-	unsigned char task_id;
+	unsigned char father_task_id;
 
 	unsigned short eclipse_ms;
 };
@@ -38,37 +38,40 @@ void ther_measure_button_time(void)
 	struct ther_button *bt = &ther_button;
 	struct button_msg *msg;
 
-	if (PUSH_BUTTON_PIN) {
-		bt->eclipse_ms += BUTTON_MEASURE_INTERVAL;
-		osal_start_timerEx(bt->task_id, TH_BUTTON_EVT, BUTTON_MEASURE_INTERVAL);
+	bt->eclipse_ms += BUTTON_MEASURE_INTERVAL;
+
+	if (bt->eclipse_ms > LONG_PRESS_TIME || (PUSH_BUTTON_PIN == 0)) {
+		if (bt->eclipse_ms < SHORT_PRESS_TIME) {
+			/*
+			 * ignore debounce of the button
+			 */
+			print(LOG_DBG, MODULE "button pressed %d ms, ignore it\r\n", bt->eclipse_ms);
+			return;
+		}
+
+		msg = (struct button_msg *)osal_msg_allocate(sizeof(struct button_msg));
+		if (!msg) {
+			print(LOG_ERR, MODULE "fail to allocate <struct button_msg>\r\n");
+			return;
+		}
+		msg->hdr.event = USER_BUTTON_EVENT;
+
+		if (bt->eclipse_ms > LONG_PRESS_TIME) {
+			print(LOG_DBG, MODULE "button pressed %d ms, long press\r\n", bt->eclipse_ms);
+			msg->type = LONG_PRESS;
+		} else {
+			print(LOG_DBG, MODULE "button pressed %d ms, short press\r\n", bt->eclipse_ms);
+			msg->type = SHORT_PRESS;
+		}
+
+		osal_msg_send(bt->father_task_id, (uint8 *)msg);
+
 		return;
 	}
 
-	/*
-	 * User release the button
-	 */
+	osal_start_timerEx(bt->father_task_id, TH_BUTTON_EVT, BUTTON_MEASURE_INTERVAL);
+	return;
 
-	if (bt->eclipse_ms < SHORT_PRESS_TIME_MIN) {
-		print(LOG_DBG, MODULE "button pressed %d ms, ignore it\r\n", bt->eclipse_ms);
-		return;
-	}
-
-	msg = (struct button_msg *)osal_msg_allocate(sizeof(struct button_msg));
-	if (!msg) {
-		print(LOG_ERR, MODULE "fail to allocate <struct button_msg>\r\n");
-		return;
-	}
-	msg->hdr.event = USER_BUTTON_EVENT;
-
-	if (bt->eclipse_ms > SHORT_PRESS_TIME_MAX) {
-//		print(LOG_DBG, MODULE "button pressed %d ms, long press\r\n", bt->eclipse_ms);
-		msg->type = LONG_PRESS;
-	} else {
-//		print(LOG_DBG, MODULE "button pressed %d ms, short press\r\n", bt->eclipse_ms);
-		msg->type = SHORT_PRESS;
-	}
-
-	osal_msg_send(bt->task_id, (uint8 *)msg);
 }
 
 void ther_button_init(unsigned char task_id)
@@ -77,7 +80,7 @@ void ther_button_init(unsigned char task_id)
 
 	print(LOG_INFO, MODULE "button init\r\n");
 
-	bt->task_id = task_id;
+	bt->father_task_id = task_id;
 
 	/*
 	 * P1.3 is push button
@@ -116,8 +119,8 @@ HAL_ISR_FUNCTION(button_isr, P1INT_VECTOR)
 
 		P1IFG &= ~BV(PUSH_BUTTON_BIT);
 
-		osal_stop_timerEx(bt->task_id, TH_BUTTON_EVT);
-		osal_start_timerEx(bt->task_id, TH_BUTTON_EVT, BUTTON_MEASURE_INTERVAL);
+		osal_stop_timerEx(bt->father_task_id, TH_BUTTON_EVT);
+		osal_start_timerEx(bt->father_task_id, TH_BUTTON_EVT, BUTTON_MEASURE_INTERVAL);
 		bt->eclipse_ms = 0;
 	}
 	/* clear P1 interrupt pending flag */
