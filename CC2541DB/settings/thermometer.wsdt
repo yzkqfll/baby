@@ -12,7 +12,7 @@
           
           
           
-        <Column0>226</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+        <Column0>295</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
       </Workspace>
       <Build>
         
@@ -32,7 +32,7 @@
             <Factory>Workspace</Factory>
             <Session>
               
-            <NodeDict><ExpandedNode>thermometer</ExpandedNode><ExpandedNode>thermometer/APP</ExpandedNode><ExpandedNode>thermometer/HAL</ExpandedNode><ExpandedNode>thermometer/HAL/Common</ExpandedNode><ExpandedNode>thermometer/HAL/Target</ExpandedNode><ExpandedNode>thermometer/HAL/Target/CC2540EB</ExpandedNode><ExpandedNode>thermometer/HAL/Target/CC2540EB/Config</ExpandedNode><ExpandedNode>thermometer/HAL/Target/CC2540EB/Drivers</ExpandedNode><ExpandedNode>thermometer/HAL/Target/CC2540EB/Includes</ExpandedNode><ExpandedNode>thermometer/INCLUDE</ExpandedNode><ExpandedNode>thermometer/LIB</ExpandedNode><ExpandedNode>thermometer/OSAL</ExpandedNode><ExpandedNode>thermometer/Output</ExpandedNode><ExpandedNode>thermometer/PROFILES</ExpandedNode><ExpandedNode>thermometer/TOOLS</ExpandedNode></NodeDict></Session>
+            <NodeDict><ExpandedNode>thermometer</ExpandedNode><ExpandedNode>thermometer/APP</ExpandedNode><ExpandedNode>thermometer/HAL</ExpandedNode><ExpandedNode>thermometer/HAL/Common</ExpandedNode><ExpandedNode>thermometer/HAL/Include</ExpandedNode><ExpandedNode>thermometer/HAL/Target</ExpandedNode><ExpandedNode>thermometer/HAL/Target/CC2540EB</ExpandedNode><ExpandedNode>thermometer/HAL/Target/CC2540EB/Config</ExpandedNode><ExpandedNode>thermometer/HAL/Target/CC2540EB/Drivers</ExpandedNode><ExpandedNode>thermometer/HAL/Target/CC2540EB/Includes</ExpandedNode><ExpandedNode>thermometer/INCLUDE</ExpandedNode><ExpandedNode>thermometer/LIB</ExpandedNode><ExpandedNode>thermometer/NPI</ExpandedNode><ExpandedNode>thermometer/OSAL</ExpandedNode><ExpandedNode>thermometer/Output</ExpandedNode><ExpandedNode>thermometer/PROFILES</ExpandedNode><ExpandedNode>thermometer/TOOLS</ExpandedNode></NodeDict></Session>
           </Tab>
         </Tabs>
         
@@ -52,14 +52,14 @@
       
       
       
-    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\thermometer.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\thermometer_Main.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\ther_spi_w25x40cl.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><ActiveTab>2</ActiveTab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
+    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\thermometer.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>315</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><ActiveTab>0</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\thermometer_Main.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\ther_spi_w25x40cl.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\ther_comm.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>197</SelStart2><SelEnd2>197</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\ther_oled9639_display.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>108</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\ther_oled9639_drv.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>120</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\ther_temp.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>39</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
     <Positions>
       
       
       
       
       
-    <Top><Row0><Sizes><Toolbar-02df3768><key>iaridepm.enu1</key></Toolbar-02df3768></Sizes></Row0></Top><Left><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>274</Bottom><Right>317</Right><x>-2</x><y>-2</y><xscreen>1010</xscreen><yscreen>665</yscreen><sizeHorzCX>739385</sizeHorzCX><sizeHorzCY>970803</sizeHorzCY><sizeVertCX>233529</sizeVertCX><sizeVertCY>402920</sizeVertCY></Rect></Wnd0></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>366</Bottom><Right>1368</Right><x>-2</x><y>-2</y><xscreen>1370</xscreen><yscreen>368</yscreen><sizeHorzCX>1002928</sizeHorzCX><sizeHorzCY>537226</sizeHorzCY><sizeVertCX>739385</sizeVertCX><sizeVertCY>970803</sizeVertCY></Rect></Wnd2></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+    <Top><Row0><Sizes><Toolbar-02c73838><key>iaridepm.enu1</key></Toolbar-02c73838></Sizes></Row0></Top><Left><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>443</Bottom><Right>386</Right><x>-2</x><y>-2</y><xscreen>1010</xscreen><yscreen>665</yscreen><sizeHorzCX>739385</sizeHorzCX><sizeHorzCY>970803</sizeHorzCY><sizeVertCX>284041</sizeVertCX><sizeVertCY>649635</sizeVertCY></Rect></Wnd0></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>197</Bottom><Right>1368</Right><x>-2</x><y>-2</y><xscreen>1370</xscreen><yscreen>199</yscreen><sizeHorzCX>1002928</sizeHorzCX><sizeHorzCY>290511</sizeHorzCY><sizeVertCX>739385</sizeVertCX><sizeVertCY>970803</sizeVertCY></Rect></Wnd2></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
   </Desktop>
 </Workspace>
 
