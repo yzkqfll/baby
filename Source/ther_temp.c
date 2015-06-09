@@ -29,6 +29,9 @@
 #define ADC_LOW_PRECISION_PIN P0_1
 #define ADC_LOW_PRECISION_BIT 1
 
+#define HIGH_PRESISION_TEMP_MIN 290
+#define HIGH_PRESISION_TEMP_MAX 450
+
 struct ther_temp {
 	unsigned char presision_used;
 
@@ -75,6 +78,11 @@ static unsigned short ther_get_temp(unsigned char presision)
 	return temp;
 }
 
+void ther_temp_power_on(void)
+{
+	enable_ldo();
+}
+
 /*
  * return value: 377 => 37.7 du
  */
@@ -83,20 +91,18 @@ unsigned short ther_get_current_temp(void)
 	struct ther_temp *t = &ther_temp;
 	unsigned short temp; /* 377 => 37.7 du */
 
-//	enable_ldo();
-
 	temp = ther_get_temp(t->presision_used);
 
-	if ((t->presision_used == LOW_PRESISION) && (temp > 290) && (temp < 450)) {
+	if ((t->presision_used == LOW_PRESISION) && (temp > HIGH_PRESISION_TEMP_MIN) && (temp < HIGH_PRESISION_TEMP_MAX)) {
 		print(LOG_INFO, MODULE "change to high presision\r\n");
 		t->presision_used = HIGH_PRESISION;
 
-	} else if ((t->presision_used == HIGH_PRESISION) && (temp < 290 || temp > 450)) {
+	} else if ((t->presision_used == HIGH_PRESISION) && (temp < HIGH_PRESISION_TEMP_MIN || temp > HIGH_PRESISION_TEMP_MAX)) {
 		print(LOG_INFO, MODULE "change to low presision\r\n");
 		t->presision_used = LOW_PRESISION;
 	}
 
-//	disable_ldo();
+	disable_ldo();
 
 	return temp;
 }
@@ -105,6 +111,8 @@ unsigned short ther_get_current_temp(void)
 void ther_temp_init(void)
 {
 	struct ther_temp *t = &ther_temp;
+
+	print(LOG_INFO, MODULE "temp init\r\n");
 
 	t->presision_used = LOW_PRESISION;
 
@@ -128,8 +136,6 @@ void ther_temp_init(void)
 	P2DIR |= BV(LDO_ENABLE_BIT); /* P2.3 as output */
 //	P2INP &= ~BV(7); /* all port2 pins pull up */
 //	P2INP |= BV(LDO_ENABLE_BIT); /* 3-state */
-
-	enable_ldo();
 
 	/* P0.7, P0.0, P0.1: input, 3-state */
 	P0SEL |= (BV(ADC_REF_VOLTAGE_BIT) | BV(ADC_HIGH_RRECISION_BIT) | BV(ADC_LOW_PRECISION_BIT));
