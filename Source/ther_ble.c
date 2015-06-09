@@ -176,8 +176,16 @@ static void ble_gap_role_new_state(gaprole_States_t new_state)
 {
 	struct ther_ble_info *bi = &ble_info;
 	linkDBItem_t  *item;
+	struct ble_status_change_msg *msg;
 
 	print(LOG_INFO, MODULE "GAP: change to <%s>\r\n", gap_state_str[new_state]);
+
+	msg = (struct ble_status_change_msg *)osal_msg_allocate(sizeof(struct ble_status_change_msg));
+	if (!msg) {
+		print(LOG_INFO, MODULE "fail to allocate <struct ble_status_change_msg>\r\n");
+		return;
+	}
+	msg->hdr.event = BLE_STATUS_CHANGE_EVENT;
 
 	switch (new_state) {
 		case GAPROLE_CONNECTED:
@@ -202,21 +210,18 @@ static void ble_gap_role_new_state(gaprole_States_t new_state)
 	        	osal_memcpy(bi->last_connected_addr, item->addr, B_ADDR_LEN );
 	        }
 
+			msg->type = BLE_CONNECT;
+			osal_msg_send(bi->task_id, (uint8 *)msg);
+
 			break;
 
 		default:
 			break;
 	}
 
-	if (bi->gap_role_state == GAPROLE_CONNECTED && new_state != GAPROLE_CONNECTED) {
-		struct ble_status_change_msg *msg;
 
-		msg = (struct ble_status_change_msg *)osal_msg_allocate(sizeof(struct ble_status_change_msg));
-		if (!msg) {
-			print(LOG_INFO, MODULE "fail to allocate <struct ble_status_change_msg>\r\n");
-			return;
-		}
-		msg->hdr.event = BLE_STATUS_CHANGE_EVENT;
+	if (bi->gap_role_state == GAPROLE_CONNECTED && new_state != GAPROLE_CONNECTED) {
+
 		msg->type = BLE_DISCONNECT;
 		osal_msg_send(bi->task_id, (uint8 *)msg);
 	}

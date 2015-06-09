@@ -32,6 +32,7 @@ struct ble_gatt_access_msg {
 
 enum {
 	BLE_DISCONNECT = 0,
+	BLE_CONNECT,
 };
 
 struct ble_status_change_msg {
