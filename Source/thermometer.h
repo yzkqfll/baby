@@ -64,6 +64,8 @@ extern "C"
 #define TH_BUZZER_EVT									 0x0080
 #define TH_BUTTON_EVT									 0x0100
 #define TH_TEST_EVT										 0x0200
+#define TH_TEMP_MEASURE_EVT								 0x0400
+#define TH_DISPLAY_EVT                                   0x0800
 
 /*********************************************************************
  * MACROS
