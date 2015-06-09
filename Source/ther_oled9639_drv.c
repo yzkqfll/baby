@@ -1,11 +1,13 @@
 
+#include "osal.h"
+
 #include "hal_board.h"
 #include "hal_i2c.h"
 #include "ther_uart_comm.h"
 
-#include "ther_oled_9639.h"
+#include "ther_oled9639_drv.h"
 
-#define MODULE "[OLED9639] "
+#define MODULE "[OLED DRV] "
 
 /*
  * P1.2 : bootst-en pin
@@ -26,11 +28,6 @@
 #define TYPE_CMD 0x0
 #define TYPE_DATA 0x40
 
-#define MAX_COL 96
-#define MAX_ROW 39
-
-#define MAX_PAGE 5 /* 8, 8, 8, 8, 7 = 39 lines */
-
 /*
  * 1. Fundamental Command Table
  */
@@ -48,9 +45,11 @@ enum {
 };
 #define CMD_DISPLAY_INVERSE(x) (0xA6 + (x))
 
-#define CMD_DISPLAY_OFF 0xAE
-#define CMD_DISPALY_ON 0xAF
-
+enum {
+	DISPLAY_OFF = 0,
+	DISPLAY_ON,
+};
+#define CMD_DISPLAY_ONOFF(x) (0xAE + (x))
 
 /*
  * 2. Scrolling Command Table
@@ -131,45 +130,6 @@ enum {
 	#define SET_CHARGE_PUMP(x) ((1 << 4) | (x) << 2)
 
 
-
-static unsigned char battery_16_20[][40] = {
-		0x00, 0x00, 0xF8, 0xFC, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0xF4, 0xF4, 0x04, 0xFC, 0x00, 0x00, 0x00, 0x01, 0x03, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x03, 0x00
-};
-
-static unsigned char bluetooth_16_10[][20] = {
-		0x00, 0x04, 0x08, 0x10, 0x60, 0xFE, 0x84, 0x48, 0x30, 0x00, 0x00, 0x20, 0x10, 0x08, 0x06, 0x3F, 0x21, 0x12, 0x0C, 0x00
-};
-
-static unsigned char dot_24_8[][24] = {
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x1F, 0x1F, 0x1F, 0x1F, 0x0E, 0x00
-};
-
-static unsigned char du_24_20[][60] = {
-		0x00, 0x00, 0x30, 0x48, 0x48, 0x30, 0x00, 0xC0, 0xE0, 0x60, 0x30, 0x30, 0x30, 0x30, 0x30, 0x60, 0xE0, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x0F, 0x18, 0x30, 0x30, 0x30, 0x30, 0x30, 0x38, 0x1E, 0x0E, 0x00, 0x00
-};
-
-/*
- * Font 0 ~ 9
- */
-static unsigned char number_16_8[][16] = {
-	0x00, 0x00, 0x10, 0x08, 0xFC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x20, 0x3F, 0x20, 0x20, 0x00,
-};
-static unsigned char number1_24_13[][39] = {
-	0x00, 0x00, 0x00, 0x20, 0x30, 0xF8, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x30, 0x30, 0x3F, 0x3F, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00
-};
-
-static unsigned char number8_24_13[][39] = {
-	0x00, 0x00, 0xE0, 0xF0, 0x18, 0x18, 0x18, 0x18, 0x18, 0xF0, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x83, 0xC7, 0x6C, 0x38, 0x38, 0x38, 0x6C, 0xC7, 0x83, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x1F, 0x30, 0x30, 0x30, 0x30, 0x30, 0x1F, 0x0F, 0x00, 0x00
-};
-
-
-struct oled_9639 {
-	bool inverse;
-};
-static struct oled_9639 oled = {
-	.inverse = FALSE,
-};
-
 /*
  * Send command to OLED
  * slave addr + type + cmd
@@ -246,14 +206,10 @@ static void set_display_inverse(unsigned char val)
 	send_cmd(CMD_DISPLAY_INVERSE(val));
 }
 
-static void set_display_on(void)
-{
-	send_cmd(CMD_DISPALY_ON);
-}
 
-static void set_display_off(void)
+static void set_display_onoff(unsigned val)
 {
-	send_cmd(CMD_DISPLAY_OFF);
+	send_cmd(CMD_DISPLAY_ONOFF(val));
 }
 
 /*
@@ -394,7 +350,54 @@ static void set_charge_pump(unsigned char val)
 	send_cmd(SET_CHARGE_PUMP(val));
 }
 
-static void fill_block(unsigned char start_page, unsigned char end_page,
+enum {
+	VCC_POWER_OFF = 0,
+	VCC_POWER_ON
+};
+
+/*
+ * OLED Panel power
+ */
+static void set_vcc_power(unsigned char val)
+{
+	BOOST_EN_PIN_VAL = val;
+}
+
+enum {
+	VDD_POWER_OFF = 0,
+	VDD_POWER_ON,
+};
+/*
+ * OLED logic power
+ */
+static void set_vdd_power(unsigned char val)
+{
+	VDD_EN_PIN_VAL = val;
+}
+
+void oled_drv_display_on(void)
+{
+	set_display_onoff(DISPLAY_ON);
+}
+
+void oled_drv_display_off(void)
+{
+	set_display_onoff(DISPLAY_OFF);
+}
+
+void oled_drv_power_on(void)
+{
+	set_vcc_power(VCC_POWER_ON);
+	set_vdd_power(VDD_POWER_ON);
+}
+
+void oled_drv_power_off(void)
+{
+	set_vcc_power(VCC_POWER_OFF);
+	set_vdd_power(VDD_POWER_OFF);
+}
+
+void oled_drv_fill_block(unsigned char start_page, unsigned char end_page,
 		unsigned char start_col, unsigned char end_col, unsigned char data)
 {
 	unsigned char page;
@@ -412,7 +415,7 @@ static void fill_block(unsigned char start_page, unsigned char end_page,
 	}
 }
 
-static void write_block(unsigned char start_page, unsigned char end_page,
+void oled_drv_write_block(unsigned char start_page, unsigned char end_page,
 		unsigned char start_col, unsigned char end_col, unsigned char *data)
 {
 	unsigned char page;
@@ -430,7 +433,7 @@ static void write_block(unsigned char start_page, unsigned char end_page,
 	}
 }
 
-static void fill_screen(unsigned char val)
+void oled_drv_fill_screen(unsigned char val)
 {
 	unsigned char page;
 	unsigned char col;
@@ -447,91 +450,14 @@ static void fill_screen(unsigned char val)
 	}
 }
 
-/*
- * OLED Panel power
- */
-void oled_set_vcc_power(unsigned char val)
+static void init_gpio(void)
 {
-	BOOST_EN_PIN_VAL = val;
-}
-
-/*
- * OLED logic power
- */
-void oled_set_vdd_power(unsigned char val)
-{
-	VDD_EN_PIN_VAL = val;
-}
-
-/*
- * Screen on/off
- */
-void oled_set_display(unsigned char val)
-{
-	if (val == DISPLAY_OFF) {
-		set_display_off();
-	} else {
-		set_display_on();
-	}
-}
-
-void oled_show_welcome(void)
-{
-
-//	fill_block(0, 0, 0, 4, );
-}
-
-void oled_show_temp(unsigned char temp)
-{
-
-}
-
-void oled_show_batt(unsigned char level)
-{
-
-}
-
-void oled_show_bt_link(bool linked)
-{
-
-}
-
-void oled_picture_inverse(void)
-{
-	struct oled_9639 *o = &oled;
-
-	if (o->inverse)
-		set_display_inverse(INVERSE_OFF);
-	else
-		set_display_inverse(INVERSE_ON);
-
-	o->inverse = !o->inverse;
-}
-
-static bool flag = TRUE;
-void oled_test(void)
-{
-	if (flag)
-		oled_set_vdd_power(VDD_POWER_ON);
-	else
-		oled_set_vdd_power(VDD_POWER_OFF);
-
-	flag = !flag;
-}
-
-void oled_init(void)
-{
-	print(LOG_INFO, MODULE "oled9639 init ok\r\n");
-
-	HalI2CInit(OLED_IIC_ADDR, i2cClock_123KHZ);
-
 	/*
 	 * VBOOST enable pin setup
 	 * p1.2
 	 */
 	P1SEL &= ~(1 << BOOST_EN_PIN);
 	P1DIR |= 1 << BOOST_EN_PIN;
-	oled_set_vcc_power(VCC_POWER_ON);
 
 	/*
 	 * VDD enable pin setup
@@ -539,9 +465,13 @@ void oled_init(void)
 	 */
 	P2SEL &= ~BV(VDD_EN_PIN);
 	P2DIR |= BV(VDD_EN_PIN);
-	oled_set_vdd_power(VDD_POWER_ON);
+}
 
-	oled_set_display(DISPLAY_OFF);
+void oled_drv_init_device(void)
+{
+	HalI2CInit(OLED_IIC_ADDR, i2cClock_533KHZ);
+
+	set_display_onoff(DISPLAY_OFF);
 
 	set_start_page(0);
 	set_start_column(0);
@@ -568,38 +498,15 @@ void oled_init(void)
 	set_entire_display(NORMAL_DISPLAY);
 	set_display_inverse(INVERSE_OFF);
 
-	fill_screen(0x0);
+	oled_drv_fill_screen(0x0);
+}
 
-//	fill_block(0, 0, 0, 7, 0xff);
+void oled_drv_init(void)
+{
+	init_gpio();
 
-	write_block(0, 2, 0, 10, bluetooth_16_10[0]);
+	oled_drv_power_on();
 
-	write_block(0, 2, 69, 89, battery_16_20[0]);
+	oled_drv_init_device();
 
-	write_block(2, 5, 10, 23, number1_24_13[0]);
-	write_block(2, 5, 23, 36, number8_24_13[0]);
-
-	write_block(2, 5, 39, 47, dot_24_8[0]);
-
-	write_block(2, 5, 50, 63, number8_24_13[0]);
-
-	write_block(2, 5, 65, 85, du_24_20[0]);
-
-
-	if (0)
-	{
-		unsigned char i, p = 0;
-
-
-		for (i = 0; i < 96; ) {
-			fill_block(p % 5, p % 5, i, i + 7, 0xff);
-			p++;
-			i += 8;
-		}
-
-	}
-
-	oled_set_display(DISPLAY_ON);
-
-	return;
 }
