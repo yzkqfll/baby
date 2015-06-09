@@ -9,6 +9,8 @@ struct ther_spi_message {
 	const void *send_buf;
 	void *recv_buf;
 	uint32 length;
+	unsigned cs_take    : 1;
+	unsigned cs_release : 1;
 };
 
 /**
@@ -17,8 +19,11 @@ struct ther_spi_message {
 void ther_spi_init(void);
 uint32 ther_spi_recv(void *recv_buf, uint32 length);
 uint32 ther_spi_send(const void *send_buf, uint32 length);
-void ther_spi_enable(void);
-void ther_spi_disable(void);
+uint32 ther_spi_send_then_send(const void *send_buf1, uint32 send_length1,
+                               const void *send_buf2, uint32 send_length2);
+uint32 ther_spi_send_then_recv(const void *send_buf, uint32 send_length,
+                               void *recv_buf, uint32 recv_length);
+
 
 #endif
 
