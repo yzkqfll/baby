@@ -79,10 +79,9 @@ static unsigned char encap_temp_data(unsigned char flag, unsigned short temp, un
 	return buf - start_start;
 }
 
-void ther_send_temp_notify(uint16 connect_handle)
+void ther_send_temp_notify(uint16 connect_handle, unsigned short temp)
 {
 	attHandleValueNoti_t notify;
-	unsigned long temp = ther_get_current_temp();
 
 	notify.len = encap_temp_data(THER_NOTIFY_FLAG, temp, notify.value);
 //	notify.handle = THERMOMETER_IMEAS_VALUE_POS;
@@ -94,10 +93,9 @@ void ther_send_temp_notify(uint16 connect_handle)
 	return;
 }
 
-void ther_send_temp_indicate(uint16 connect_handle, unsigned char task_id)
+void ther_send_temp_indicate(uint16 connect_handle, unsigned char task_id, unsigned short temp)
 {
 	attHandleValueInd_t indicate;
-	unsigned long temp = ther_get_current_temp();
 
 	indicate.len = encap_temp_data(THER_INDICATE_FLAG, temp, indicate.value);
 	indicate.handle = THERMOMETER_TEMP_VALUE_POS;
