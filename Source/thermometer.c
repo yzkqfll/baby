@@ -54,11 +54,8 @@ struct ther_info {
 	/*
 	 * Display
 	 */
-	bool display_on;
-	bool display_on_first;
-	bool display_picture_changed;
-	unsigned char display_content;
-	unsigned short display_remain_ms;
+	unsigned char display_picture;
+	unsigned short display_time;
 
 	/*
 	 * Indication
@@ -90,6 +87,7 @@ static struct ther_info ther_info;
 #define DISPLAY_POWER_SETUP_TIME 40 /* ms */
 #define DISPLAY_SWITCH_INTERVAL 40 /* ms */
 #define DISPLAY_TIME SEC_TO_MS(5)
+#define DISPLAY_WELCOME_TIME SEC_TO_MS(2)
 
 /*
  * Temp measurement
@@ -235,19 +233,13 @@ static void ther_handle_button(struct ther_info *ti, struct button_msg *msg)
 
 		if (ti->power_mode == PM_ACTIVE) {
 
-			if (!ti->display_on) {
+			if (ti->display_picture == OLED_DISPLAY_OFF) {
 				/*
-				 * oled need to be powered on 10ms before operate on it
+				 * oled need to be powered on 10ms before operating on it
 				 */
 				oled_power_on();
-
-				ti->display_on = TRUE;
-				ti->display_on_first = TRUE;
-				ti->display_picture_changed = FALSE;
-
-				ti->display_content = OLED_DISPLAY_PICTURE1;
-				ti->display_remain_ms = DISPLAY_TIME;
-
+				ti->display_picture = OLED_DISPLAY_PICTURE1;
+				ti->display_time = DISPLAY_TIME;
 				osal_start_timerEx(ti->task_id, TH_DISPLAY_EVT, DISPLAY_POWER_SETUP_TIME);
 
 				/* change temp measure to 1 sec */
@@ -257,10 +249,8 @@ static void ther_handle_button(struct ther_info *ti, struct button_msg *msg)
 				/*
 				 * switch to next picture
 				 */
-				ti->display_picture_changed = TRUE;
-
-				ti->display_content = (ti->display_content + 1) % OLED_DISPLAY_MAX_PICTURE;
-				ti->display_remain_ms = DISPLAY_TIME;
+				ti->display_picture = (ti->display_picture + 1) % OLED_DISPLAY_MAX_PICTURE;
+				ti->display_time = DISPLAY_TIME;
 
 				osal_stop_timerEx(ti->task_id, TH_DISPLAY_EVT);
 				osal_start_timerEx(ti->task_id, TH_DISPLAY_EVT, DISPLAY_SWITCH_INTERVAL);
@@ -326,28 +316,23 @@ static void ther_dispatch_msg(struct ther_info *ti, osal_event_hdr_t *msg)
  */
 static void ther_display_show_picture(struct ther_info *ti)
 {
-	switch (ti->display_content) {
-	case OLED_DISPLAY_PICTURE1:
-		if (ti->display_on_first) {
-			/* first show */
-			oled_show_first_picture(0, LINK_ON, 0, ti->temp_current);
-			ti->display_on_first = FALSE;
-		} else if (ti->display_picture_changed) {
-			/* picture2 -> picture1 */
-			oled_clear_screen();
-			oled_show_first_picture(0, LINK_ON, 0, ti->temp_current);
-			ti->display_picture_changed = FALSE;
-		}
+	oled_clear_screen();
 
+	switch (ti->display_picture) {
+	case OLED_DISPLAY_WELCOME:
+		oled_show_welcome();
+		break;
+
+	case OLED_DISPLAY_GOODBYE:
+		oled_show_goodbye();
+		break;
+
+	case OLED_DISPLAY_PICTURE1:
+		oled_show_first_picture(0, LINK_ON, 0, ti->temp_current);
 		break;
 
 	case OLED_DISPLAY_PICTURE2:
-		if (ti->display_picture_changed) {
-			oled_clear_screen();
-			oled_show_second_picture();
-			ti->display_picture_changed = FALSE;
-		}
-
+		oled_show_second_picture();
 		break;
 
 	default:
@@ -359,10 +344,64 @@ static void ther_display_show_picture(struct ther_info *ti)
 
 static void ther_display_update_temp(struct ther_info *ti)
 {
-	if (ti->display_content == OLED_DISPLAY_PICTURE1 &&
-		ti->temp_current != ti->temp_last_saved)
+	if (ti->display_picture == OLED_DISPLAY_PICTURE1 &&
+		ti->temp_current != ti->temp_last_saved) {
 		oled_update_first_picture(OLED_CONTENT_TEMP, ti->temp_current);
+	}
 }
+
+static void ther_init_device(struct ther_info *ti)
+{
+	/* uart init */
+	uart_comm_init();
+	print(LOG_INFO, "\r\n\r\n");
+	print(LOG_INFO, "--------------\r\n");
+
+	/* button init */
+	ther_button_init(ti->task_id);
+
+	/* buzzer init */
+	ther_buzzer_init(ti->task_id);
+	ther_play_music(BUZZER_MUSIC_SYS_BOOT);
+
+	/* oled display init */
+	oled_display_init();
+	ti->display_picture = OLED_DISPLAY_OFF;
+
+	/* spi flash */
+	ther_spi_w25x_init();
+
+	/* temp init */
+	ther_temp_init();
+	ti->temp_measure_interval = TEMP_MEASURE_INTERVAL;
+	ti->temp_stage = TEMP_STAGE_SETUP;
+
+	/* ble init */
+	ther_ble_init(ti->task_id);
+
+}
+
+
+static void ther_start_system(struct ther_info *ti)
+{
+
+	ther_init_device(ti);
+
+	/* test */
+	osal_start_timerEx(ti->task_id, TH_TEST_EVT, 5000);
+
+	/*
+	 * show welcome picture
+	 */
+	oled_power_on();
+	ti->display_picture = OLED_DISPLAY_WELCOME;
+	ti->display_time = DISPLAY_WELCOME_TIME;
+	osal_start_timerEx(ti->task_id, TH_DISPLAY_EVT, DISPLAY_POWER_SETUP_TIME);
+
+	osal_start_timerEx( ti->task_id, TH_TEMP_MEASURE_EVT, TEMP_POWER_SETUP_TIME);
+
+}
+
 
 
 /*********************************************************************
@@ -395,6 +434,12 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 		return (events ^ SYS_EVENT_MSG);
 	}
 
+	if (events & TH_START_SYSTEM_EVT) {
+		ther_start_system(ti);
+
+		return (events ^ TH_START_SYSTEM_EVT);
+	}
+
 	/* temp measure event */
 	if (events & TH_TEMP_MEASURE_EVT) {
 
@@ -420,7 +465,7 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 				// TODO: save to local
 			}
 
-			if (ti->display_on) {
+			if (ti->display_picture < OLED_DISPLAY_MAX_PICTURE) {
 				/* update temp */
 				ther_display_update_temp(ti);
 			}
@@ -439,13 +484,13 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 	/* Display event */
 	if (events & TH_DISPLAY_EVT) {
 
-		if (ti->display_remain_ms) {
+		if (ti->display_time) {
 			ther_display_show_picture(ti);
 
-			osal_start_timerEx( ti->task_id, TH_DISPLAY_EVT, DISPLAY_TIME);
-			ti->display_remain_ms -= DISPLAY_TIME;
+			osal_start_timerEx( ti->task_id, TH_DISPLAY_EVT, ti->display_time);
+			ti->display_time = 0;
 		} else {
-			ti->display_on = FALSE;
+			ti->display_picture = OLED_DISPLAY_OFF;
 			oled_power_off();
 
 			/* change temp measure interval to 5 sec */
@@ -486,10 +531,13 @@ uint16 Thermometer_ProcessEvent(uint8 task_id, uint16 events)
 	if (events & TH_TEST_EVT) {
 //		oled_picture_inverse();
 
-		print(LOG_DBG, MODULE "live\r\n");
+//		print(LOG_DBG, MODULE "live\r\n");
 
 //		oled_show_temp(TRUE, ti->current_temp);
-		osal_start_timerEx(ti->task_id, TH_TEST_EVT, 1000);
+
+		ther_spi_w25x_test();
+
+		osal_start_timerEx(ti->task_id, TH_TEST_EVT, 5000);
 
 		return (events ^ TH_TEST_EVT);
 	}
@@ -520,36 +568,7 @@ void Thermometer_Init(uint8 task_id)
 
 	ti->power_mode = PM_ACTIVE;
 
-	/* uart init */
-	uart_comm_init();
-	print(LOG_INFO, "\r\n\r\n");
-	print(LOG_INFO, "--------------\r\n");
-
-	/* button init */
-	ther_button_init(ti->task_id);
-
-	/* buzzer init */
-	ther_buzzer_init(ti->task_id);
-	ther_play_music(BUZZER_MUSIC_SYS_BOOT);
-
-	/* oled display init */
-	oled_display_init();
-
-	/* spi flash */
-	ther_spi_w25x_init();
-
-	/* temp init */
-	ther_temp_init();
-	ti->temp_measure_interval = TEMP_MEASURE_INTERVAL;
-	ti->temp_stage = TEMP_STAGE_SETUP;
-
-	/* ble init */
-	ther_ble_init(ti->task_id);
-
-	/* test */
-//	osal_start_timerEx(ti->task_id, TH_TEST_EVT, 5000);
-
-	osal_start_timerEx( ti->task_id, TH_TEMP_MEASURE_EVT, TEMP_POWER_SETUP_TIME);
+	osal_start_timerEx(ti->task_id, TH_START_SYSTEM_EVT, 200);
 }
 
 void HalLedEnterSleep(void)

@@ -55,7 +55,7 @@ extern "C"
 
 
 // Thermomometer Task Events
-#define TH_START_DEVICE_EVT                              0x0001
+#define TH_START_SYSTEM_EVT                              0x0001
 #define TH_PERIODIC_MEAS_EVT                             0x0002
 #define TH_PERIODIC_IMEAS_EVT                            0x0008
 #define TH_START_DISCOVERY_EVT                           0x0010
