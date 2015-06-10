@@ -15,7 +15,7 @@
 #include "ther_spi_w25x40cl.h"
 
 #define MODULE  "[W25X] "
-//#define W25X_DEBUG
+#define W25X_DEBUG
 
 #define CONFIG_W25X40CL
 
@@ -285,7 +285,7 @@ void ther_spi_w25x_test(void)
 		print(LOG_ERR, MODULE "flash open failed!\r\n");
 	}
 
-	//w25x_sector_erase(0);
+	w25x_sector_erase(0);
 
 	for(i = 0; i < 32; i++) {
 		w25x_byte_write(i, &data_to_wr, 1);
