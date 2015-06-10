@@ -227,37 +227,6 @@ static uint32 w25x_flash_write(int32 pos, const void* buffer, uint32 size)
 	return size;
 }
 
-#ifdef W25X_DEBUG
-static void w25x_flash_test(void)
-{
-	int i;
-	uint8 data_to_wr[4] = { 0x5a, 0xab, 0x8a, 0xfe};
-	uint8 data_from_rd[4];
-
-	if(FL_EOK != w25x_flash_open()) {
-		print(LOG_ERR, MODULE "flash open failed!\r\n");
-	}
-
-	w25x_sector_erase(0);
-
-	w25x_byte_write(0, data_to_wr, 4);
-
-	w25x_flash_read(0, data_from_rd, 4);
-
-	print(LOG_INFO, MODULE "0x%X 0x%X 0x%X 0x%X!\r\n", data_from_rd[0], data_from_rd[1], data_from_rd[2], data_from_rd[3]);
-
-	for(i = 0; i < 4; i++) {
-		if(data_from_rd[i] != data_to_wr[i])
-			print(LOG_ERR, MODULE "flash rd/wr/erase test failed!\r\n");
-		return;
-	}
-
-	print(LOG_INFO, MODULE "flash rd/wr/erase test is OK!\r\n");
-}
-
-#endif
-
-
 uint8 ther_spi_w25x_init(void)
 {
 	struct flash_device *fd = &flash_dev;
@@ -300,10 +269,36 @@ uint8 ther_spi_w25x_init(void)
 	fd->read    = w25x_flash_read;
 	fd->write   = w25x_flash_write;
 
-#ifdef W25X_DEBUG
-	w25x_flash_test();
-#endif
-
 	return FL_EOK;
 }
+
+#ifdef W25X_DEBUG
+void ther_spi_w25x_test(void)
+{
+	int i;
+	uint8 data_to_wr = 0x5a;
+	uint8 data_from_rd;
+
+	print(LOG_INFO, MODULE "start flash rd/wr test.\r\n");
+
+	if(FL_EOK != w25x_flash_open()) {
+		print(LOG_ERR, MODULE "flash open failed!\r\n");
+	}
+
+	//w25x_sector_erase(0);
+
+	for(i = 0; i < 32; i++) {
+		w25x_byte_write(i, &data_to_wr, 1);
+
+		w25x_flash_read(i, &data_from_rd, 1);
+
+		if(data_from_rd != 0x5a) {
+			print(LOG_INFO, MODULE "flash test failed \r\n");
+		}
+	}
+
+	print(LOG_INFO, MODULE "finish flash rd/wr(%dB) test.\r\n", i);
+}
+#endif
+
 
